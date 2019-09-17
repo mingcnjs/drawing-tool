@@ -21,6 +21,7 @@ app.use(bodyParser.json());
 app.use('/api/users', users);
 
 app.get('/', function(req, res) {
+    console.log(req)
     res.send('hello');
 });
 
