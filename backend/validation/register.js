@@ -1,51 +1,71 @@
-const Validator = require('validator');
-const isEmpty = require('./is-empty');
+const Validator = require("validator");
+const isEmpty = require("./is-empty");
 
 module.exports = function validateRegisterInput(data) {
-    let errors = {};
-    data.name = !isEmpty(data.name) ? data.name : '';
-    data.email = !isEmpty(data.email) ? data.email : '';
-    data.password = !isEmpty(data.password) ? data.password : '';
-    data.password_confirm = !isEmpty(data.password_confirm) ? data.password_confirm : '';
+  let errors = {};
 
-    if(!Validator.isLength(data.name, { min: 2, max: 30 })) {
-        errors.name = 'Name must be between 2 to 30 chars';
-    }
-    
-    if(Validator.isEmpty(data.name)) {
-        errors.name = 'Name field is required';
-    }
+  data.firstName = !isEmpty(data.firstName) ? data.firstName : "";
+  data.lastName = !isEmpty(data.lastName) ? data.lastName : "";
+  data.growersID = !isEmpty(data.growersID) ? data.growersID : "";
+  data.retailID = !isEmpty(data.retailID) ? data.retailID : "";
+  data.email = !isEmpty(data.email) ? data.email : "";
+  data.password = !isEmpty(data.password) ? data.password : "";
+  data.password_confirm = !isEmpty(data.password_confirm)
+    ? data.password_confirm
+    : "";
+  console.log("data>>>", data);
+  if (!Validator.isLength(data.firstName, { min: 2, max: 30 })) {
+    errors.firstName = "Name must be between 2 to 30 chars";
+  }
 
-    if(!Validator.isEmail(data.email)) {
-        errors.email = 'Email is invalid';
-    }
+  if (Validator.isEmpty(data.firstName)) {
+    errors.firstName = "Name field is required";
+  }
+  if (!Validator.isLength(data.lastName, { min: 2, max: 30 })) {
+    errors.lastName = "Name must be between 2 to 30 chars";
+  }
 
-    if(Validator.isEmpty(data.email)) {
-        errors.email = 'Email is required';
-    }
+  if (Validator.isEmpty(data.lastName)) {
+    errors.lastName = "Name field is required";
+  }
 
-    if(!Validator.isLength(data.password, {min: 6, max: 30})) {
-        errors.password = 'Password must have 6 chars';
-    }
+  if (Validator.isEmpty(data.growersID)) {
+    errors.growersID = "Growers ID field is required";
+  }
+  if (Validator.isEmpty(data.retailID)) {
+    errors.retailID = "Retail ID field is required";
+  }
 
-    if(Validator.isEmpty(data.password)) {
-        errors.password = 'Password is required';
-    }
+  if (!Validator.isEmail(data.email)) {
+    errors.email = "Email is invalid";
+  }
 
-    if(!Validator.isLength(data.password_confirm, {min: 6, max: 30})) {
-        errors.password_confirm = 'Password must have 6 chars';
-    }
+  if (Validator.isEmpty(data.email)) {
+    errors.email = "Email is required";
+  }
 
-    if(!Validator.equals(data.password, data.password_confirm)) {
-        errors.password_confirm = 'Password and Confirm Password must match';
-    }
+  if (!Validator.isLength(data.password, { min: 6, max: 30 })) {
+    errors.password = "Password must have 6 chars";
+  }
 
-    if(Validator.isEmpty(data.password_confirm)) {
-        errors.password_confirm = 'Password is required';
-    }
+  if (Validator.isEmpty(data.password)) {
+    errors.password = "Password is required";
+  }
 
-    return {
-        errors,
-        isValid: isEmpty(errors)
-    }
-}
+  if (!Validator.isLength(data.password_confirm, { min: 6, max: 30 })) {
+    errors.password_confirm = "Password must have 6 chars";
+  }
+
+  if (!Validator.equals(data.password, data.password_confirm)) {
+    errors.password_confirm = "Password and Confirm Password must match";
+  }
+
+  if (Validator.isEmpty(data.password_confirm)) {
+    errors.password_confirm = "Password is required";
+  }
+
+  return {
+    errors,
+    isValid: isEmpty(errors)
+  };
+};
