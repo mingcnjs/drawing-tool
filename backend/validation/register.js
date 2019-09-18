@@ -13,7 +13,6 @@ module.exports = function validateRegisterInput(data) {
   data.password_confirm = !isEmpty(data.password_confirm)
     ? data.password_confirm
     : "";
-  console.log("data>>>", data);
   if (!Validator.isLength(data.firstName, { min: 2, max: 30 })) {
     errors.firstName = "Name must be between 2 to 30 chars";
   }

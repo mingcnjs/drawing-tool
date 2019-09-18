@@ -5,13 +5,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const validateRegisterInput = require("../validation/register");
-// const validateLoginInput = require('../validation/login');
+const validateLoginInput = require("../validation/login");
 
 const User = require("../models/User");
 
 router.post("/register", function(req, res) {
   const { errors, isValid } = validateRegisterInput(req.body);
-
   if (!isValid) {
     return res.status(400).json(errors);
   }
@@ -29,9 +28,12 @@ router.post("/register", function(req, res) {
         d: "mm"
       });
       const newUser = new User({
-        name: req.body.name,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
         email: req.body.email,
         password: req.body.password,
+        growersID: req.body.growersID,
+        retailID: req.body.retailID,
         avatar
       });
 
@@ -53,52 +55,53 @@ router.post("/register", function(req, res) {
   });
 });
 
-// router.post('/login', (req, res) => {
+router.post("/login", (req, res) => {
+  const { errors, isValid } = validateLoginInput(req.body);
 
-//     const { errors, isValid } = validateLoginInput(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
 
-//     if(!isValid) {
-//         return res.status(400).json(errors);
-//     }
+  const email = req.body.email;
+  const password = req.body.password;
 
-//     const email = req.body.email;
-//     const password = req.body.password;
-
-//     User.findOne({email})
-//         .then(user => {
-//             if(!user) {
-//                 errors.email = 'User not found'
-//                 return res.status(404).json(errors);
-//             }
-//             bcrypt.compare(password, user.password)
-//                     .then(isMatch => {
-//                         if(isMatch) {
-//                             const payload = {
-//                                 id: user.id,
-//                                 first_name: user.first_name,
-//                                 last_name: user.last_name,
-//                                 growers_id: user.growers_id,
-//                                 retail_id: user.retail_id
-//                             }
-//                             jwt.sign(payload, 'secret', {
-//                                 expiresIn: 3600
-//                             }, (err, token) => {
-//                                 if(err) console.error('There is some error in token', err);
-//                                 else {
-//                                     res.json({
-//                                         success: true,
-//                                         token: `Bearer ${token}`
-//                                     });
-//                                 }
-//                             });
-//                         }
-//                         else {
-//                             errors.password = 'Incorrect Password';
-//                             return res.status(400).json(errors);
-//                         }
-//                     });
-//         });
-// });
+  User.findOne({ email }).then(user => {
+    if (!user) {
+      errors.email = "User not found";
+      return res.status(404).json(errors);
+    }
+    bcrypt.compare(password, user.password).then(isMatch => {
+      if (isMatch) {
+        const payload = {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          growers_id: user.growers_id,
+          retail_id: user.retail_id
+        };
+        jwt.sign(
+          payload,
+          "secret",
+          {
+            expiresIn: 3600
+          },
+          (err, token) => {
+            if (err) console.error("There is some error in token", err);
+            else {
+              res.json({
+                success: true,
+                token: `Bearer ${token}`
+              });
+            }
+          }
+        );
+      } else {
+        errors.password = "Incorrect Password";
+        return res.status(400).json(errors);
+      }
+    });
+  });
+});
 
 // router.get('/me', passport.authenticate('jwt', { session: false }), (req, res) => {
 //     return res.json({
