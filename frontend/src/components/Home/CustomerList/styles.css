@@ -1,0 +1,19 @@
+.customer-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: #eff3f4;
+  height: 60px;
+  font-size: 28px;
+}
+.customer-header p {
+  margin: 0;
+  margin-left: 30px;
+  vertical-align: middle;
+  color: #2d7afa;
+  text-decoration: underline;
+}
+.customer-section {
+  margin-top: 50px;
+  text-align: center;
+}

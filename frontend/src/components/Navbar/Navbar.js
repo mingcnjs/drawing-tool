@@ -33,7 +33,7 @@ class Navbar extends Component {
           <div className="nav-logo">
             <img src={logo} alt="loading..." />
           </div>
-          <h1>GROWSERS</h1>
+          <h1>GROWERS</h1>
         </div>
         <div className="nav-logout-link" id="navbarSupportedContent">
           {isAuthenticated ? authLinks : ''}

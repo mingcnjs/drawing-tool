@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { loginUser } from '../../actions/authentication'
 import classnames from 'classnames'
+import { Button } from 'reactstrap'
 import './styles.css'
 
 class Login extends Component {
@@ -33,15 +34,9 @@ class Login extends Component {
     this.props.loginUser(user)
   }
 
-  componentDidMount() {
-    if (this.props.auth.isAuthenticated) {
-      this.props.history.push('/')
-    }
-  }
-
   componentWillReceiveProps(nextProps) {
     if (nextProps.auth.isAuthenticated) {
-      this.props.history.push('/')
+      this.props.history.push('/customer')
     }
     if (nextProps.errors) {
       this.setState({
@@ -89,13 +84,9 @@ class Login extends Component {
               )}
             </div>
             <div className="form-group" style={{ textAlign: 'center' }}>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: '200px' }}
-              >
+              <Button color="primary" type="submit" style={{ width: '200px' }}>
                 Login
-              </button>
+              </Button>
               <Link
                 className="nav-link"
                 to="/register"
