@@ -1,9 +1,10 @@
-import React, { Component } from 'react'
-import { BrowserRouter as Router, Route } from 'react-router-dom'
+import React, { Component, Fragment } from 'react'
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import store from './store'
 import jwt_decode from 'jwt-decode'
 import setAuthToken from './setAuthToken'
+
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core'
 import { setCurrentUser, logoutUser } from './actions/authentication'
 
@@ -34,14 +35,15 @@ class App extends Component {
       <Provider store={store}>
         <Router>
           <MuiThemeProvider theme={theme}>
-            <div>
+            <Fragment>
               <Navbar />
-              <Route exact path="/" component={CustomerList} />
-              <div className="container">
-                <Route exact path="/register" component={Register} />
-                <Route exact path="/login" component={Login} />
-              </div>
-            </div>
+              <Switch>
+                <Route exact path="/" component={Login} />
+                <Route path="/customer" component={CustomerList} />
+                <Route path="/register" component={Register} />
+                <Route path="/login" component={Login} />
+              </Switch>
+            </Fragment>
           </MuiThemeProvider>
         </Router>
       </Provider>

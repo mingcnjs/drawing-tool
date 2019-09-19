@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import { withRouter } from 'react-router-dom'
 import { registerUser } from '../../actions/authentication'
 import classnames from 'classnames'
+import { Button } from 'reactstrap'
 import './styles.css'
 
 class Register extends Component {
@@ -41,7 +42,7 @@ class Register extends Component {
       growersID: this.state.growersID,
       retailID: this.state.retailID,
     }
-    this.props.registerUser(user, this.props.history)
+    this.props.registerUser(user)
   }
 
   componentWillReceiveProps(nextProps) {
@@ -63,7 +64,6 @@ class Register extends Component {
 
   render() {
     const { errors } = this.state
-    console.log('errors---->', errors)
     return (
       <div className="container" style={{ marginTop: '50px', width: '500px' }}>
         <h2 style={{ marginBottom: '40px' }}>Create Account</h2>
@@ -190,13 +190,9 @@ class Register extends Component {
           </div>
 
           <div className="form-group" style={{ textAlign: 'center' }}>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ width: '200px' }}
-            >
+            <Button color="primary" type="submit" style={{ width: '200px' }}>
               Create Account
-            </button>
+            </Button>
             <Link
               className="nav-link"
               to="/login"

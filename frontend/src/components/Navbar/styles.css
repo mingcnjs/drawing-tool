@@ -3,3 +3,7 @@
   background: black;
   color: white;
 }
+.nav-logout-link {
+  text-align: right;
+  margin-right: right;
+}
