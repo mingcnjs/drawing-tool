@@ -3,16 +3,15 @@ import { GET_ERRORS, SET_CURRENT_USER } from './types'
 import setAuthToken from '../setAuthToken'
 import jwt_decode from 'jwt-decode'
 
-export const registerUser = (user, history) => dispatch => {
-  axios
-    .post('/api/users/register', user)
-    .then(res => history.push('/login'))
-    .catch(err => {
-      dispatch({
-        type: GET_ERRORS,
-        payload: err.response.data,
-      })
+export const registerUser = user => dispatch => {
+  return axios.post('/api/users/register', user).catch(err => {
+    console.log(false)
+    dispatch({
+      type: GET_ERRORS,
+      payload: (err.response || { data: null }).data,
     })
+    return Promise.reject()
+  })
 }
 
 export const loginUser = user => dispatch => {
@@ -28,7 +27,7 @@ export const loginUser = user => dispatch => {
     .catch(err => {
       dispatch({
         type: GET_ERRORS,
-        payload: err.response.data,
+        payload: (err.response || { data: null }).data,
       })
     })
 }

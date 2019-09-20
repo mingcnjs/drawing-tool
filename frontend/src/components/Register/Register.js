@@ -42,7 +42,9 @@ class Register extends Component {
       growersID: this.state.growersID,
       retailID: this.state.retailID,
     }
-    this.props.registerUser(user)
+    this.props.registerUser(user).then(() => {
+      this.props.history.replace('/login')
+    })
   }
 
   componentWillReceiveProps(nextProps) {

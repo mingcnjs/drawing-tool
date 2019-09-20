@@ -1,8 +1,11 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import PropTypes from 'prop-types'
-import { withRouter } from 'react-router-dom'
-import { createCustomer } from '../../../actions/customer'
+import {
+  createCustomer,
+  updateCustomer,
+  resetErrors,
+} from '../../../actions/customer'
 import classnames from 'classnames'
 import {
   Button,
@@ -23,10 +26,43 @@ class FormModal extends React.Component {
       farmerName: '',
       growerCustomerNumber: '',
       errors: {},
+      editable: false,
     }
     this.handleInputChange = this.handleInputChange.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
+    this.show = this.show.bind(this)
   }
+
+  show(data, editable) {
+    this.props.resetErrors()
+    if (data) {
+      const {
+        _id,
+        operationName,
+        farmerEmail,
+        farmerName,
+        growerCustomerNumber,
+      } = data
+      this.setState({
+        operationName,
+        farmerEmail,
+        farmerName,
+        growerCustomerNumber,
+        editable,
+        currentEditingId: _id,
+      })
+    } else {
+      this.setState({
+        operationName: '',
+        farmerEmail: '',
+        farmerName: '',
+        growerCustomerNumber: '',
+        editable: true,
+        currentEditingId: undefined,
+      })
+    }
+  }
+
   handleInputChange(e) {
     this.setState({
       [e.target.name]: e.target.value,
@@ -36,18 +72,28 @@ class FormModal extends React.Component {
   handleSubmit(e) {
     e.preventDefault()
     const user = {
-      userId: this.props.auth.user.id,
       operationName: this.state.operationName,
       farmerEmail: this.state.farmerEmail,
       farmerName: this.state.farmerName,
       growerCustomerNumber: this.state.growerCustomerNumber,
     }
 
-    this.props.createCustomer(user, this.props.history)
-    if (!this.props.errors) {
-      this.props.toggle()
-    }
+    Promise.resolve()
+      .then(() => {
+        if (this.state.currentEditingId) {
+          return this.props.updateCustomer(this.state.currentEditingId, user)
+        } else {
+          return this.props.createCustomer({
+            ...user,
+            userId: this.props.auth.user.id,
+          })
+        }
+      })
+      .then(() => {
+        this.props.onCreate()
+      })
   }
+
   componentWillReceiveProps(nextProps) {
     if (nextProps.errors) {
       this.setState({
@@ -55,13 +101,14 @@ class FormModal extends React.Component {
       })
     }
   }
+
   render() {
-    const { open, toggle } = this.props
+    const { open, onCancel } = this.props
     const { errors } = this.state
     return (
       <Modal
         isOpen={open}
-        toggle={toggle}
+        toggle={onCancel}
         className="modal-style"
         style={{
           border: 'none',
@@ -137,12 +184,14 @@ class FormModal extends React.Component {
           </FormGroup>
         </ModalBody>
         <ModalFooter style={{ border: 'none' }}>
-          <Button color="primary" onClick={toggle}>
+          <Button color="primary" onClick={onCancel}>
             Cancel
           </Button>{' '}
-          <Button color="success" onClick={this.handleSubmit}>
-            Submit
-          </Button>
+          {this.state.editable && (
+            <Button color="success" onClick={this.handleSubmit}>
+              Submit
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     )
@@ -151,20 +200,28 @@ class FormModal extends React.Component {
 
 FormModal.propTypes = {
   createCustomer: PropTypes.func.isRequired,
+  updateCustomer: PropTypes.func.isRequired,
   auth: PropTypes.object.isRequired,
   errors: PropTypes.object.isRequired,
   open: PropTypes.bool.isRequired,
+  onCreate: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 }
-const mapDispatchToProps = dispatch => {
-  return {
-    createCustomer: (user, history) => dispatch(createCustomer(user, history)),
-  }
+
+const mapDispatchToProps = {
+  createCustomer,
+  updateCustomer,
+  resetErrors,
 }
+
 const mapStateToProps = state => ({
   auth: state.auth,
   errors: state.errors,
 })
+
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(withRouter(FormModal))
+  null,
+  { withRef: true },
+)(FormModal)
