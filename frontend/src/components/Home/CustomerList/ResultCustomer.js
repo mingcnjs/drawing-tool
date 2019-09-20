@@ -8,7 +8,6 @@ import TableHead from '@material-ui/core/TableHead'
 import TableRow from '@material-ui/core/TableRow'
 import Checkbox from '@material-ui/core/Checkbox'
 import { Button } from 'reactstrap'
-// import { deleteCustomer } from '../../../actions/customer'
 import './styles.css'
 
 class ResultCustomer extends Component {
@@ -20,8 +19,18 @@ class ResultCustomer extends Component {
       selected: [],
     }
     this.delete = this.delete.bind(this)
+    this.edit = this.edit.bind(this)
+    this.refresh = this.refresh.bind(this)
   }
+
   componentDidMount() {
+    this.props.getCustomerList(this.props.auth.user.id)
+  }
+
+  refresh = () => {
+    this.setState({
+      selected: [],
+    })
     this.props.getCustomerList(this.props.auth.user.id)
   }
 
@@ -46,26 +55,44 @@ class ResultCustomer extends Component {
       selected: newSelected,
     })
   }
+
   delete() {
     console.log('this.state.selected', this.state.selected)
-    this.props.deleteCustomer(this.props.auth.user.id, this.state.selected)
+    if (this.state.selected.length > 0) {
+      Promise.all(
+        this.state.selected.map(customerId => {
+          return this.props.deleteCustomer(customerId)
+        }),
+      ).then(() => {
+        this.refresh()
+      })
+    }
   }
+
+  edit(item) {
+    this.props.onEdit(item)
+  }
+
+  view(item) {
+    this.props.onView(item)
+  }
+
   render() {
     const { customer } = this.props
     const { selected } = this.state
-
     const isSelected = name => selected.indexOf(name) !== -1
-    console.log('this.props>>>>>', selected)
     return (
       <div>
         <Table>
           <TableHead>
-            <TableCell></TableCell>
-            <TableCell>Farming Operation Name</TableCell>
-            <TableCell>Farmer Name</TableCell>
-            <TableCell>Email Address</TableCell>
-            <TableCell>Growsers ID</TableCell>
-            <TableCell>Operations</TableCell>
+            <TableRow>
+              <TableCell></TableCell>
+              <TableCell>Farming Operation Name</TableCell>
+              <TableCell>Farmer Name</TableCell>
+              <TableCell>Email Address</TableCell>
+              <TableCell>Growsers ID</TableCell>
+              <TableCell>Operations</TableCell>
+            </TableRow>
           </TableHead>
           <TableBody>
             {customer &&
@@ -99,7 +126,25 @@ class ResultCustomer extends Component {
                     <TableCell>{row.farmerName}</TableCell>
                     <TableCell>{row.farmerEmail}</TableCell>
                     <TableCell>{row.growerCustomerNumber}</TableCell>
-                    <TableCell>View Options</TableCell>
+                    <TableCell>
+                      <Button
+                        className="btn-edit-customer"
+                        color="primary"
+                        size="sm"
+                        onClick={() => this.edit(row)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        style={{ marginLeft: 10 }}
+                        className="btn-edit-customer"
+                        color="primary"
+                        size="sm"
+                        onClick={() => this.view(row)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 )
               })}
@@ -111,16 +156,9 @@ class ResultCustomer extends Component {
             color="primary"
             size="sm"
             onClick={this.delete}
+            disabled={this.state.selected.length === 0}
           >
             Delete
-          </Button>
-          <Button
-            className="btn-edit-customer"
-            color="primary"
-            size="sm"
-            // onClick={this.edit(selected)}
-          >
-            Edit
           </Button>
           <Button className="btn-send-customer" color="primary" size="sm">
             Send Boundaries to Growers
@@ -136,6 +174,7 @@ const mapStateToProps = state => ({
   errors: state.errors,
   customer: state.customer.getCustomers,
 })
+
 const mapDispatchToProps = {
   getCustomerList,
   deleteCustomer,
@@ -144,4 +183,6 @@ const mapDispatchToProps = {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
+  null,
+  { withRef: true },
 )(ResultCustomer)

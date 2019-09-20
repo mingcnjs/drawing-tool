@@ -1,17 +1,33 @@
 import axios from 'axios'
 import { GET_ERRORS, GET_CUSTOMER_LIST, DELETE_CUSTOMER } from './types'
 
-export const createCustomer = (user, history) => dispatch => {
-  axios
-    .post('/api/customer/register', user)
-    .then(res => history.push('/customer'))
-    .catch(err => {
-      dispatch({
-        type: GET_ERRORS,
-        payload: err.response.data,
-      })
-    })
+export const resetErrors = () => dispatch => {
+  dispatch({
+    type: GET_ERRORS,
+    payload: {},
+  })
 }
+
+export const createCustomer = user => dispatch => {
+  return axios.post('/api/customer', user).catch(err => {
+    dispatch({
+      type: GET_ERRORS,
+      payload: err.response.data,
+    })
+    return Promise.reject()
+  })
+}
+
+export const updateCustomer = (id, user) => dispatch => {
+  return axios.post(`/api/customer/${id}`, user).catch(err => {
+    dispatch({
+      type: GET_ERRORS,
+      payload: err.response.data,
+    })
+    return Promise.reject()
+  })
+}
+
 export const getCustomerList = (userId, history) => dispatch => {
   axios
     .get(`/api/customer/${userId}`)
@@ -28,10 +44,9 @@ export const getCustomerList = (userId, history) => dispatch => {
       })
     })
 }
-export const deleteCustomer = (userId, selected) => dispatch => {
-  console.log('userId>>>>>>>', userId)
-  axios
-    .get(`/api/customer/`, { userId: userId, selected: selected })
+export const deleteCustomer = customerId => dispatch => {
+  return axios
+    .delete(`/api/customer/${customerId}`)
     .then(response => {
       dispatch({
         type: DELETE_CUSTOMER,
@@ -43,5 +58,6 @@ export const deleteCustomer = (userId, selected) => dispatch => {
         type: GET_ERRORS,
         payload: err.response.data,
       })
+      return Promise.reject()
     })
 }

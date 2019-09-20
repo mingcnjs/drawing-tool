@@ -13,8 +13,23 @@ router.get("/:userId", (req, res) => {
     .catch(err => res.status(422).json(err));
 });
 
-router.post("/register", function(req, res) {
-  console.log(req.body);
+router.post("/:userId", function(req, res) {
+  const { errors, isValid } = validateCustomerInput(req.body);
+  if (!isValid) {
+    res.status(400).json(errors);
+  } else {
+    User.findByIdAndUpdate(req.params.userId, {
+      operationName: req.body.operationName,
+      farmerName: req.body.farmerName,
+      farmerEmail: req.body.farmerEmail,
+      growerCustomerNumber: req.body.growerCustomerNumber
+    }).then(user => {
+      res.status(200).json(user);
+    });
+  }
+});
+
+router.post("/", function(req, res) {
   const { errors, isValid } = validateCustomerInput(req.body);
   if (!isValid) {
     res.status(400).json(errors);
@@ -47,10 +62,10 @@ router.post("/register", function(req, res) {
     });
   }
 });
+
 router.delete("/:id", function(req, res) {
-  Book.findById({ _id: req.params.id })
-    .then(dbModel => dbModel.remove())
-    .then(dbModel => res.json(dbModel))
+  User.findByIdAndDelete(req.params.id)
+    .then(dbModel => res.status(200).json({ ok: true }))
     .catch(err => res.status(422).json(err));
 });
 
