@@ -4,13 +4,21 @@ const gravatar = require("gravatar");
 
 const User = require("../models/Customer");
 const validateCustomerInput = require("../validation/customer");
+
+router.get("/:userId", (req, res) => {
+  console.log("req", req.params);
+  User.find({ userId: req.params.userId })
+    .sort({ date: -1 })
+    .then(dbModel => res.json(dbModel))
+    .catch(err => res.status(422).json(err));
+});
+
 router.post("/register", function(req, res) {
   console.log(req.body);
   const { errors, isValid } = validateCustomerInput(req.body);
   if (!isValid) {
     res.status(400).json(errors);
   } else {
-    console.log("famerEmail>>>>>", req.body.farmerEmail);
     User.findOne({
       farmerEmail: req.body.farmerEmail
     }).then(user => {
@@ -38,6 +46,12 @@ router.post("/register", function(req, res) {
       }
     });
   }
+});
+router.delete("/:id", function(req, res) {
+  Book.findById({ _id: req.params.id })
+    .then(dbModel => dbModel.remove())
+    .then(dbModel => res.json(dbModel))
+    .catch(err => res.status(422).json(err));
 });
 
 module.exports = router;
