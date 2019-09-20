@@ -15,5 +15,15 @@
 }
 .customer-section {
   margin-top: 50px;
+}
+.customer-section .btn-sub-group {
+  margin-top: 30px;
+  text-align: right;
+}
+.customer-section .btn-sub-group button {
+  margin-left: 10px;
+}
+.btn-add {
+  margin-top: 30px;
   text-align: center;
 }
