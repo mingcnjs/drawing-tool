@@ -2,6 +2,17 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
+const geometrySchema = new Schema({
+  coordinates : {type:Array,"default":[]},
+})
+
+const FeaturesSchema = new Schema({
+  geometry : [geometrySchema],
+  others : {type:Array,"default":{}},
+  properties:{type:Array,"default":{}},
+  type : {type:String}
+})
+
 const FarmSchema = new Schema({
   userId: {
     type: String,
@@ -19,13 +30,12 @@ const FarmSchema = new Schema({
     type: String,
     required: true
   },
-  farmArea: {
-    type: String,
-    required: true
+  approxArea: {
+    type: Number,
   },
   geoJSON: {
-    type: String,
-    required: true
+    type: {type:String},
+    features:[FeaturesSchema],
   }
 });
 

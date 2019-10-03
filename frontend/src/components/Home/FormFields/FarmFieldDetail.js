@@ -9,6 +9,7 @@ import Map from './map'
 import './styles.css'
 import 'leaflet/dist/leaflet.css'
 import { createFarm } from '../../../actions/farm'
+import classnames from 'classnames'
 
 class FarmFieldDetail extends Component {
   listRef = null
@@ -25,11 +26,16 @@ class FarmFieldDetail extends Component {
       clientName:'',
       farmName:'',
       approxArea:0,
-      userId : this.props.auth.user.id
+      userId : this.props.auth.user.id,
+      errors: {},
     }
-   this.getMapdata = (getgeojson) => { console.log(getgeojson);
+   this.getMapdata = (getgeojson) => { 
        this.setState({geoJSON:getgeojson})
    }
+   this.getAreadata = (getarea) => { 
+       this.setState({approxArea:getarea})
+   }
+
    this.handleSubmit = this.handleSubmit.bind(this);
    this.handleInputChange = this.handleInputChange.bind(this)
   }
@@ -40,6 +46,18 @@ class FarmFieldDetail extends Component {
     })
   }
 
+  componentWillReceiveProps(nextProps) {
+//    if (nextProps.auth.isAuthenticated) {
+//      this.props.history.push('/')
+//    }
+console.log(nextProps.errors);
+    if (nextProps.errors) {
+      this.setState({
+        errors: nextProps.errors,
+      })
+    }
+  }
+
   handleSubmit(e) {
     e.preventDefault() 
     console.log(this.state);
@@ -48,7 +66,7 @@ class FarmFieldDetail extends Component {
       fieldName: this.state.fieldName,
       clientName: this.state.clientName,
       farmName: this.state.farmName, 
-      farmArea : this.state.approxArea,
+      approxArea : String(this.state.approxArea),
       geoJSON: this.state.geoJSON,
     }
     this.props.createFarm(farm)
@@ -57,7 +75,8 @@ class FarmFieldDetail extends Component {
 
   render() {
     const { classes } = this.props
-    const position = [51.505, -0.09]
+    const { errors } = this.state
+//    const position = [51.505, -0.09]
     return (
      <form onSubmit={this.handleSubmit}>
       <div className="detail-form-section">
@@ -80,6 +99,9 @@ class FarmFieldDetail extends Component {
                 name="fieldName"
                 id="fieldName"
                 placeholder="Field Name"
+                className={classnames('form-control form-control-lg', {
+                  'is-invalid': errors.fieldName,
+                })}
                 onChange={this.handleInputChange}
                 value={this.state.fieldName}
               />
@@ -90,6 +112,9 @@ class FarmFieldDetail extends Component {
                 name="clientName"
                 id="clientName"
                 placeholder="Client Name"
+                className={classnames('form-control form-control-lg', {
+                  'is-invalid': errors.clientName,
+                })}
                 onChange={this.handleInputChange}
                 value={this.state.clientName}
               />
@@ -99,6 +124,9 @@ class FarmFieldDetail extends Component {
                 name="farmName"
                 id="farmName"
                 placeholder="Farm Name"
+                className={classnames('form-control form-control-lg', {
+                  'is-invalid': errors.farmName,
+                })}
                 onChange={this.handleInputChange}
                 value={this.state.farmName}
               />
@@ -108,8 +136,11 @@ class FarmFieldDetail extends Component {
                 name="approxArea"
                 id="approxArea"
                 placeholder="0 ac"
+                className={classnames('form-control form-control-lg', {
+                  'is-invalid': errors.approxArea,
+                })}
                 onChange={this.handleInputChange}
-                value={this.state.farmArea}
+                value={this.state.approxArea}
               />
             </FormGroup>
           </div>
@@ -130,7 +161,7 @@ class FarmFieldDetail extends Component {
         </div>
 
         <div id="map" style={{ width: '100%', height: '100%' }}>
-          <Map geojsontostate={this.getMapdata} />
+          <Map geojsontostate={this.getMapdata} getarea={this.getAreadata} />
         </div>
       </div>
      </form>
