@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
-import { Map, TileLayer, FeatureGroup, Circle, ZoomControl, removeLayer } from 'react-leaflet'
+import { Map, TileLayer, FeatureGroup, Circle } from 'react-leaflet'
+import {turf} from "turf"
 import { EditControl } from 'react-leaflet-draw'
+import L from "leaflet";
 import {
   Dropdown,
   DropdownToggle,
@@ -31,7 +33,9 @@ export default class MyMap extends Component {
     super(props)
 
     this.toggle = this.toggle.bind(this)
-    this.isLeafletdrawmounted = false
+    this.isLeafletdrawmounted = false;
+    this.layercount = 1;
+    this.undo = [];
     this.state = {
       dropdownOpen: false,
       point: [38.51, -80.06],
@@ -86,12 +90,35 @@ export default class MyMap extends Component {
     drawControl._container.querySelector(".leaflet-draw-draw-polygon").setAttribute("id","drawpolygon");
     drawControl._container.querySelector(".leaflet-draw-draw-rectangle").setAttribute("id","drawrectangle");
     drawControl._container.querySelector(".leaflet-draw-draw-circle").setAttribute("id","drawcircle");
-    this.drawobject = drawControl 
+    document.querySelector(".leaflet-draw-edit-edit").setAttribute("id","editpolygon");
+     this.drawobject = drawControl 
     console.log('_onMounted', drawControl);
     this.isLeafletdrawmounted = true;
     this.mountedldraw = true;
   }
 
+  _onshapecomplete = (drawControl) => {
+    drawControl.layer._path.setAttribute("id","shape_"+this.layercount);
+    drawControl.layer.id = "shape_"+this.layercount;
+
+
+
+
+    this.props.geojsontostate("this is test");
+    drawControl.layer.on({
+//      mouseover: this.highlightFeature.bind(this),
+//      mouseout: this.resetHighlight.bind(this),
+      click: this._onLayerClick.bind(this)
+    });
+    this.layercount++; 
+  }
+
+ _onLayerClick(e){
+   var layer = e.target;
+   this.drawobject._container.querySelector("#editpolygon").click();
+   console.log(layer);
+ } 
+ 
   componentDidMount () {
   }
 
@@ -128,6 +155,8 @@ export default class MyMap extends Component {
               onCreated={this._onCreate}
               onDeleted={this._onDeleted}
               onMounted={this._onMounted}
+              onCreated={this._onshapecomplete}   
+//              onClick={this._onMapClick}
             />
             <Circle center={this.state.point} radius={this.state.radius} />
           </FeatureGroup>
