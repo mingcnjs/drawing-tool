@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-
 import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/styles'
 import TextField from '@material-ui/core/TextField'
@@ -9,6 +8,7 @@ import { Button, FormGroup, Label, Input } from 'reactstrap'
 import Map from './map'
 import './styles.css'
 import 'leaflet/dist/leaflet.css'
+import { createFarm } from '../../../actions/farm'
 
 class FarmFieldDetail extends Component {
   listRef = null
@@ -20,13 +20,46 @@ class FarmFieldDetail extends Component {
       lat: 51.505,
       lng: -0.09,
       zoom: 13,
+      geoJSON:'',
+      fieldName:'',
+      clientName:'',
+      farmName:'',
+      approxArea:0,
+      userId : this.props.auth.user.id
     }
+   this.getMapdata = (getgeojson) => { console.log(getgeojson);
+       this.setState({geoJSON:getgeojson})
+   }
+   this.handleSubmit = this.handleSubmit.bind(this);
+   this.handleInputChange = this.handleInputChange.bind(this)
   }
+
+  handleInputChange(e) {
+    this.setState({
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  handleSubmit(e) {
+    e.preventDefault() 
+    console.log(this.state);
+    const farm = {
+      userId : this.state.userId,        
+      fieldName: this.state.fieldName,
+      clientName: this.state.clientName,
+      farmName: this.state.farmName, 
+      farmArea : this.state.approxArea,
+      geoJSON: this.state.geoJSON,
+    }
+    this.props.createFarm(farm)
+  }
+
 
   render() {
     const { classes } = this.props
     const position = [51.505, -0.09]
     return (
+     <form onSubmit={this.handleSubmit}>
       <div className="detail-form-section">
         <div className="section">
           <div className="form-right-section">
@@ -76,7 +109,7 @@ class FarmFieldDetail extends Component {
                 id="approxArea"
                 placeholder="0 ac"
                 onChange={this.handleInputChange}
-                value={this.state.farmName}
+                value={this.state.farmArea}
               />
             </FormGroup>
           </div>
@@ -97,9 +130,10 @@ class FarmFieldDetail extends Component {
         </div>
 
         <div id="map" style={{ width: '100%', height: '100%' }}>
-          <Map />
+          <Map geojsontostate={this.getMapdata} />
         </div>
       </div>
+     </form>
     )
   }
 }
@@ -125,4 +159,9 @@ const mapStateToProps = state => ({
   errors: state.errors,
 })
 
-export default connect(mapStateToProps)(withStyles(styles)(FarmFieldDetail))
+const mapDispatchToProps = {
+  createFarm
+}
+export default connect(mapStateToProps,mapDispatchToProps)(withStyles(styles)(FarmFieldDetail))
+
+
