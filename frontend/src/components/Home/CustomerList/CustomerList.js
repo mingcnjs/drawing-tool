@@ -43,12 +43,8 @@ class CustomerList extends Component {
   }
 
   onView = currentSelectedItem => {
-    if (this.modalRef) {
-      this.setState({
-        modal: true,
-      })
-      this.modalRef.show(currentSelectedItem, false)
-    }
+    console.log('onView>>>>>>>>>>>>>>>>', currentSelectedItem)
+    this.props.history.push(`/farmfields/${currentSelectedItem._id}`)
   }
 
   render() {

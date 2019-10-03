@@ -142,7 +142,7 @@ class ResultCustomer extends Component {
                         size="sm"
                         onClick={() => this.view(row)}
                       >
-                        View
+                        View Options
                       </Button>
                     </TableCell>
                   </TableRow>
