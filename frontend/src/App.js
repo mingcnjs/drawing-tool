@@ -12,8 +12,10 @@ import Navbar from './components/Navbar/Navbar'
 import Register from './components/Register/Register'
 import Login from './components/Login/Login'
 import CustomerList from './components/Home/CustomerList/CustomerList'
-import baseTheme from './baseTheme'
+import FarmFields from './components/Home/FormFields/FarmFields'
+import FarmFieldDetail from './components/Home/FormFields/FarmFieldDetail'
 
+import baseTheme from './baseTheme'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 if (localStorage.jwtToken) {
@@ -47,6 +49,11 @@ class App extends Component {
                 <Route path="/customer" component={CustomerList} />
                 <Route path="/register" component={Register} />
                 <Route path="/login" component={Login} />
+                <Route path="/farmfields/:id" component={FarmFields} />
+                <Route
+                  path="/detailfarmfield/:id"
+                  component={FarmFieldDetail}
+                />
               </Switch>
             </Fragment>
           </MuiThemeProvider>
