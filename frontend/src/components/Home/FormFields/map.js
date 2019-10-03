@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Map, TileLayer, FeatureGroup, Circle } from 'react-leaflet'
-import {turf} from "turf"
+import * as turf from '@turf/turf'
 import { EditControl } from 'react-leaflet-draw'
 import L from "leaflet";
 import {
@@ -11,7 +11,6 @@ import {
   Button,
 } from 'reactstrap'
 import { MAP_URL_DEFAULT } from '../../../constants'
-
 const styles = {
   map: {
     width: '100%',
@@ -36,6 +35,9 @@ export default class MyMap extends Component {
     this.isLeafletdrawmounted = false;
     this.layercount = 1;
     this.undo = [];
+    this.shapeGeoJSON = {};
+    this.shapeGeoJSON.type = "FeatureCollection";
+    this.shapeGeoJSON.features = [];
     this.state = {
       dropdownOpen: false,
       point: [38.51, -80.06],
@@ -100,11 +102,68 @@ export default class MyMap extends Component {
   _onshapecomplete = (drawControl) => {
     drawControl.layer._path.setAttribute("id","shape_"+this.layercount);
     drawControl.layer.id = "shape_"+this.layercount;
-
-
-
-
-    this.props.geojsontostate("this is test");
+    let stringshapeGeoJSON = "";
+    if (drawControl.layerType == "polygon" || drawControl.layerType == "rectangle")
+       { 
+        let feature = {};
+        feature.id = "shape_"+this.layercount;
+        feature.type = "Feature";
+        feature.geometry = {};
+        feature.properties = {};
+        feature.others = {};
+        feature.geometry.type = "Polygon";
+        feature.geometry.coordinates = [];
+        feature.geometry.coordinates.push([]);
+        let points = [];
+        for (let ipoints = 0; ipoints < drawControl.layer._latlngs[0].length; ipoints++)
+            { 
+             feature.geometry.coordinates[0].push([drawControl.layer._latlngs[0][ipoints]["lng"],parseFloat(drawControl.layer._latlngs[0][ipoints]["lat"])]);
+             points.push(L.latLng(drawControl.layer._latlngs[0][ipoints]["lng"],parseFloat(drawControl.layer._latlngs[0][ipoints]["lat"])));
+            }
+         let poly = null;
+         if (drawControl.layerType == "polygon")
+            {  
+             poly = L.polygon(points);
+            }  
+         if (drawControl.layerType == "rectangle")
+            {  
+             poly = L.rectangle(points);
+            }  
+         feature.geometry.coordinates[0].push(feature.geometry.coordinates[0][0]);
+         let polygon = turf.polygon(feature.geometry.coordinates);
+         let rewind = turf.rewind(polygon);
+         feature.geometry.coordinates[0] = rewind.geometry.coordinates[0];
+         this.shapeGeoJSON.features.push(feature);
+         stringshapeGeoJSON = JSON.stringify(this.shapeGeoJSON);
+        }
+    if (drawControl.layerType == "circle")
+       { 
+        var options = {
+           steps: 200,
+           units: 'kilometers',
+           options: {}
+        };
+        let feature = {};
+        feature.id = "shape_"+this.layercount;
+        feature.type = "Feature";
+        feature.geometry = {};
+        feature.properties = {};
+        feature.geometry.type = "Polygon";
+        feature.geometry.coordinates = [];
+        feature.geometry.coordinates.push([])
+        let radius = drawControl.layer._mRadius;
+        let center = [drawControl.layer._latlng.lng,drawControl.layer._latlng.lat];  
+        if (drawControl.layer._mRadius > 0)
+           {
+            let polygon = turf.circle(center, drawControl.layer._mRadius / 1000, options);
+            feature.geometry.coordinates[0] = polygon.geometry.coordinates[0];
+           }  
+         feature.others = {basetype:"Circle",center:center};
+         feature.properties.radius = drawControl.layer._mRadius;
+         this.shapeGeoJSON.features.push(feature);
+         stringshapeGeoJSON = JSON.stringify(this.shapeGeoJSON);
+        }
+    this.props.geojsontostate(stringshapeGeoJSON);
     drawControl.layer.on({
 //      mouseover: this.highlightFeature.bind(this),
 //      mouseout: this.resetHighlight.bind(this),
