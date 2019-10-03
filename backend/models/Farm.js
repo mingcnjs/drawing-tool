@@ -2,36 +2,33 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
-const UserSchema = new Schema({
+const FarmSchema = new Schema({
   userId: {
     type: String,
     required: true
   },
-  operationName: {
+  fieldName: {
     type: String,
     required: true
   },
-  farmerName: {
+  clientName: {
     type: String,
     required: true
   },
-  farmerEmail: {
+  farmName: {
     type: String,
     required: true
   },
-  growerCustomerNumber: {
+  farmArea: {
     type: String,
     required: true
   },
-  avatar: {
-    type: String
-  },
-  date: {
-    type: Date,
-    default: Date.now
+  geoJSON: {
+    type: String,
+    required: true
   }
 });
 
-const User = mongoose.model("customer", UserSchema);
+const Farm = mongoose.model("farm", FarmSchema);
 
-module.exports = User;
+module.exports = Farm;
