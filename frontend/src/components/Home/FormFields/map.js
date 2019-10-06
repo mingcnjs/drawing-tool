@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Map, TileLayer, FeatureGroup, Circle } from 'react-leaflet'
+import { Map, TileLayer, FeatureGroup} from 'react-leaflet'
 import * as turf from '@turf/turf'
 import { EditControl } from 'react-leaflet-draw'
 import L from "leaflet";
@@ -11,6 +11,7 @@ import {
   Button,
 } from 'reactstrap'
 import { MAP_URL_DEFAULT } from '../../../constants'
+
 const styles = {
   map: {
     width: '100%',
@@ -30,7 +31,6 @@ const styles = {
 export default class MyMap extends Component {
   constructor(props) {
     super(props)
-
     this.toggle = this.toggle.bind(this)
     this.isLeafletdrawmounted = false;
     this.layercount = 1;
@@ -42,10 +42,15 @@ export default class MyMap extends Component {
     this.drawobject = null;
     this.meterstoacres = 0.000247105;
     this.featuregroup = null;
+    this.farmdata = null;
+    this.layerinaction = null;
     this.state = {
       dropdownOpen: false,
-      point: [38.51, -80.06],
-      radius: 200,
+      firsttime:true, 
+      loadedgeoJSON:true,
+      lat : 30.51,
+      lng : 0.06,
+      zoom:12
     }
   }
 
@@ -57,21 +62,7 @@ export default class MyMap extends Component {
   renderMap() {
     return <TileLayer url={MAP_URL_DEFAULT} />
   }
-//  _onCreate(a, b, c, d) {
-//    console.log('onCreate')
-//    console.log('a: ', a)
-//    console.log('b: ', b)
-//    console.log('c: ', c)
-//    console.log('d: ', d)
-//  }
 
-  _onEditPath(a, b, c, d) {
-    console.log('_onEditPath')
-    console.log('a: ', a)
-    console.log('b: ', b)
-    console.log('c: ', c)
-    console.log('d: ', d)
-  }
   action = () => {
 //   let shapetoremove = null;
 //   for (let ilayers in this.map._layers)
@@ -93,12 +84,158 @@ export default class MyMap extends Component {
     drawControl._container.querySelector(".leaflet-draw-draw-circle").setAttribute("id","drawcircle");
     document.querySelector(".leaflet-draw-edit-edit").setAttribute("id","editpolygon");
     this.drawobject = drawControl 
-    console.log('_onMounted', drawControl);
+//    console.log('_onMounted', drawControl);
     this.isLeafletdrawmounted = true;
     this.mountedldraw = true;
   }
 
-  _onCreate = (drawControl) => {
+  _oneditvertex = (drawControl) => { 
+     let options = {
+        steps: 200,
+        units: 'kilometers',
+        options: {}
+     };
+     let stringshapeGeoJSON = "";
+     if (drawControl.poly)
+        {
+         let id = drawControl.poly.id;
+         for (let ift = 0; ift < this.shapeGeoJSON.features.length; ift++)
+             {
+              if (this.shapeGeoJSON.features[ift].id.toUpperCase() === id.toUpperCase())
+                 {
+                  this.shapeGeoJSON.features[ift].geometry.coordinates[0] = [];
+                  for (let ipoints = 0; ipoints < drawControl.poly._latlngs[0].length; ipoints++)
+                      {
+                       this.shapeGeoJSON.features[ift].geometry.coordinates[0].push([drawControl.poly._latlngs[0][ipoints]["lng"],drawControl.poly._latlngs[0][ipoints]["lat"]]);
+                      }     
+                 }
+             } 
+        }    
+     let totalarea = 0;
+     let points = [];
+     points.push([]);
+     let poly = null;
+     for (let ilayers in this.featuregroup.leafletElement._layers)
+         {
+          points = [];
+          points.push([]);
+          poly = null;  
+          if (this.featuregroup.leafletElement._layers[ilayers].id)
+             {        
+              let shapetype = this.featuregroup.leafletElement._layers[ilayers].id.split("#")[1];
+              if (shapetype === "polygon" || shapetype === "rectangle")
+                 {
+                  for (let ipoints = 0; ipoints < this.featuregroup.leafletElement._layers[ilayers]._latlngs[0].length; ipoints++)
+                      { 
+                       points[0].push([parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][ipoints]["lng"]),parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][ipoints]["lat"])]);
+                      }    
+                  points[0].push([parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][0]["lng"]),parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][0]["lat"])])
+                  poly = turf.polygon(points);
+                  totalarea += turf.area(poly);   
+                 }    
+              if (shapetype === "circle")
+                 {  
+                  let radius = this.featuregroup.leafletElement._layers[ilayers]._mRadius;
+                  let center = [this.featuregroup.leafletElement._layers[ilayers]._latlng.lng,this.featuregroup.leafletElement._layers[ilayers]._latlng.lat];  
+                  if (this.featuregroup.leafletElement._layers[ilayers]._mRadius > 0)
+                     {
+                      poly = turf.circle(center, radius / 1000, options);
+                     }  
+                  totalarea += turf.area(poly);   
+                }   
+             }   
+         }  
+     stringshapeGeoJSON = this.shapeGeoJSON;
+     this.props.getarea(Math.floor(totalarea * this.meterstoacres * 100)/100);
+     this.props.geojsontostate(stringshapeGeoJSON);     
+    }; 
+
+  _oneditchange = (drawControl) => { 
+     let options = {
+        steps: 200,
+        units: 'kilometers',
+        options: {}
+     };
+     let stringshapeGeoJSON = "";
+     this.layerinaction = drawControl;
+     if (drawControl.layer)
+        {
+         let id = drawControl.layer.id; 
+         let ptype = id.split("#")[1]  
+         for (let ift = 0; ift < this.shapeGeoJSON.features.length; ift++)
+             {
+              if (this.shapeGeoJSON.features[ift].id.toUpperCase() === id.toUpperCase()  &&  ptype === "rectangle")
+                 {
+                  this.shapeGeoJSON.features[ift].geometry.coordinates[0] = [];
+                  for (let ipoints = 0; ipoints < drawControl.layer._latlngs[0].length; ipoints++)
+                      {
+                       this.shapeGeoJSON.features[ift].geometry.coordinates[0].push([drawControl.layer._latlngs[0][ipoints]["lng"],drawControl.layer._latlngs[0][ipoints]["lat"]]);
+                      }     
+                 }
+              if (this.shapeGeoJSON.features[ift].id.toUpperCase() === id.toUpperCase() &&  ptype === "circle")
+                 {
+                  this.shapeGeoJSON.features[ift].geometry.coordinates[0] = [];
+                  let radius = drawControl.layer._mRadius;
+                  let center = [drawControl.layer._latlng.lng,drawControl.layer._latlng.lat];  
+                  let polygon  = "";
+                  if (drawControl.layer._mRadius > 0)
+                     {
+                      polygon = turf.circle(center, drawControl.layer._mRadius / 1000, options);
+                      this.shapeGeoJSON.features[ift].geometry.coordinates[0] = polygon.geometry.coordinates[0];
+                     }  
+                  this.shapeGeoJSON.features[ift].others = {basetype:"Circle",center:center};
+                  this.shapeGeoJSON.features[ift].properties.radius = radius;
+                 }
+             } 
+        }         
+     let totalarea = 0;
+     let points = [];
+     points.push([]);
+     let poly = null;
+     for (let ilayers in this.featuregroup.leafletElement._layers)
+         {
+          points = [];
+          points.push([]);
+          poly = null;  
+          if (this.featuregroup.leafletElement._layers[ilayers].id)
+             {        
+              let shapetype = this.featuregroup.leafletElement._layers[ilayers].id.split("#")[1];
+              if (shapetype === "polygon" || shapetype === "rectangle")
+                 {
+                  for (let ipoints = 0; ipoints < this.featuregroup.leafletElement._layers[ilayers]._latlngs[0].length; ipoints++)
+                      { 
+                       points[0].push([parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][ipoints]["lng"]),parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][ipoints]["lat"])]);
+                      }    
+                  points[0].push([parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][0]["lng"]),parseFloat(this.featuregroup.leafletElement._layers[ilayers]._latlngs[0][0]["lat"])])
+                  poly = turf.polygon(points);
+                  totalarea += turf.area(poly);   
+                 }    
+              if (shapetype === "circle")
+                 {  
+                  let radius = this.featuregroup.leafletElement._layers[ilayers]._mRadius;
+                  let center = [this.featuregroup.leafletElement._layers[ilayers]._latlng.lng,this.featuregroup.leafletElement._layers[ilayers]._latlng.lat];  
+                  if (this.featuregroup.leafletElement._layers[ilayers]._mRadius > 0)
+                     {
+                      poly = turf.circle(center, radius / 1000, options);
+                     }  
+                  totalarea += turf.area(poly);   
+                 }   
+             }   
+         }  
+     stringshapeGeoJSON = this.shapeGeoJSON;
+     this.props.getarea(Math.floor(totalarea * this.meterstoacres * 100)/100);
+     this.props.geojsontostate(stringshapeGeoJSON);     
+    }; 
+
+  _oneditfinished = (drawControl) => { 
+     this.layerinaction = drawControl;
+     setTimeout(() =>{
+       this.drawobject._container.querySelector("#editpolygon").click();
+     },300)
+  }; 
+
+
+  _onCreate = (drawControl) => { 
     let options = {
        steps: 200,
        units: 'kilometers',
@@ -112,7 +249,7 @@ export default class MyMap extends Component {
     if (drawControl.layerType === "polygon" || drawControl.layerType === "rectangle")
        { 
         let feature = {};
-        feature.id = "shape_"+this.layercount;
+        feature.id = "shape_"+this.layercount+"#"+drawControl.layerType;
         feature.type = "Feature";
         feature.geometry = {};
         feature.properties = {};
@@ -137,7 +274,7 @@ export default class MyMap extends Component {
     if (drawControl.layerType === "circle")
        { 
         let feature = {};
-        feature.id = "shape_"+this.layercount;
+        feature.id = "shape_"+this.layercount+"#"+drawControl.layerType;
         feature.type = "Feature";
         feature.geometry = {};
         feature.properties = {};
@@ -184,7 +321,7 @@ export default class MyMap extends Component {
                 let center = [this.featuregroup.leafletElement._layers[ilayers]._latlng.lng,this.featuregroup.leafletElement._layers[ilayers]._latlng.lat];  
                 if (drawControl.layer._mRadius > 0)
                    {
-                    poly = turf.circle(center, drawControl.layer._mRadius / 1000, options);
+                    poly = turf.circle(center, radius / 1000, options);
                    }  
                 totalarea += turf.area(poly);   
                }   
@@ -200,25 +337,27 @@ export default class MyMap extends Component {
    this.layercount++; 
    this.editstarted = true;
    this.drawobject._container.querySelector("#editpolygon").click();
+//   setTimeout(() => {
+//      this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+//      this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+//   },500);
   }
 
  _onLayerClick(e){
-   var layer = e.target;
    if (this.editstarted)
       {
        this.editstarted = false;
       }  
    this.editstarted = true;
    this.drawobject._container.querySelector("#editpolygon").click();
-   console.log(layer);
  } 
  
   componentDidMount () {
   }
 
-  addpolygon = () =>{
+  addpolygon = () =>{ 
     if (this.isLeafletdrawmounted)   
-       {
+       { 
         this.drawobject._container.querySelector("#drawpolygon").click();
        }  
   }
@@ -238,34 +377,126 @@ export default class MyMap extends Component {
        }  
   }
 
-  _onFeatureGroupReady = (reactFGref) => {
-    console.log(reactFGref); 
-    this.featuregroup = reactFGref;
+  onFeatureGroupAdd = (e) => {
+      setTimeout(()=>{
+          let bnds = L.latLngBounds()
+          for (let ilay in this.map.leafletElement._layers)
+              {
+               if (this.map.leafletElement._layers[ilay]._latlngs && this.map.leafletElement._layers[ilay]._latlngs[0])
+                  {
+                   for (var ipoints = 0; ipoints < this.map.leafletElement._layers[ilay]._latlngs[0].length; ipoints++)
+                       {
+                        bnds.extend(this.map.leafletElement._layers[ilay]._latlngs[0][ipoints]);
+                      }    
+                  } 
+              }   
+           if (bnds.isValid())
+              {
+               this.map.leafletElement.fitBounds(bnds);
+              }
+           this.drawobject._container.querySelector("#editpolygon").click();
+           setTimeout(() => {
+//              this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+//              this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+           },500);
+      },1500);
+  }
+
+  _onFeatureGroupReady = (reactFGref) => { 
+    if (this.props.status === "NEW")
+       {
+        this.featuregroup = reactFGref;
+       }
+    else
+       {
+        if (this.isLeafletdrawmounted && this.state.firsttime)   
+           {
+            this.drawobject._container.querySelector("#editpolygon").click();
+            this.setState({firsttime : false});
+            return;
+           }       
+        this.featuregroup = reactFGref; 
+        setTimeout(() => {  
+            if(this.props.farmdata && this.state.loadedgeoJSON) { 
+               this.setState({loadedgeoJSON : false});
+               this.shapeGeoJSON = this.props.farmdata;
+               let leafletFG = this.featuregroup.leafletElement;
+               let gpoints = null; 
+               this.layercount = 1;
+               for (let ifeat = 0; ifeat < this.shapeGeoJSON.features.length; ifeat++)
+                   {
+                    let idss = this.shapeGeoJSON.features[ifeat].id.split("#")[1]
+                    if (idss === "polygon" && !this.shapeGeoJSON.features[ifeat].others.basetype)
+                       {
+                        gpoints = [];
+                        for (let ipointsa = 0; ipointsa < this.shapeGeoJSON.features[ifeat].geometry.coordinates[0].length; ipointsa++)
+                            {
+                             gpoints.push([this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsa][1],this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsa][0]])                        
+                            }
+                        let poly = L.polygon(gpoints);
+                        poly.id = this.shapeGeoJSON.features[ifeat].id;                         
+                        leafletFG.addLayer(poly);
+                        poly._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
+                       } 
+                    if (idss === "rectangle" && !this.shapeGeoJSON.features[ifeat].others.basetype)
+                       {
+                        gpoints = [];
+                        for (let ipointsb = 0; ipointsb < this.shapeGeoJSON.features[ifeat].geometry.coordinates[0].length; ipointsb++)
+                            {
+                             gpoints.push([this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsb][1],this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsb][0]])                        
+                            } 
+                        let poly = L.rectangle(gpoints);
+                        poly.id = this.shapeGeoJSON.features[ifeat].id;                         
+                        leafletFG.addLayer(poly);
+                        poly._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
+                       } 
+                    if (this.shapeGeoJSON.features[ifeat].others.basetype === "Circle")
+                       {
+                        gpoints = [this.shapeGeoJSON.features[ifeat].others.center[1],this.shapeGeoJSON.features[ifeat].others.center[0]];
+                        let radius = parseFloat(this.shapeGeoJSON.features[ifeat].properties.radius);
+                        let circle = L.circle(gpoints,{radius:radius});
+                        circle.id = this.shapeGeoJSON.features[ifeat].id;                         
+                        leafletFG.addLayer(circle);
+                        circle._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
+                       } 
+                    let ids = this.shapeGeoJSON.features[ifeat].id.split("#")
+                    this.layercount = parseFloat(ids[0].split("_")[1]);
+                   } 
+                 if (this.layercount > 1)
+                    {
+                     this.layercount++;
+                    } 
+//               this.setState({shapeGeoJSON:this.props.farmdata});
+//               let leafletGeoJSON = new L.GeoJSON(this.state.shapeGeoJSON); 
+//               let leafletFG = this.featuregroup.leafletElement;
+//               leafletGeoJSON.eachLayer( layer =>leafletFG.addLayer(layer));
+            }  
+         },500);  
+       }      
   }
 
   renderDraw() {
     return (
-      <div>
-        <FeatureGroup>
-          <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
+        <div>
+          <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} } onAdd={this.onFeatureGroupAdd}>
             <EditControl
               position="bottomleft"
-              onEdited={this._onEditPath}
               onCreated={this._onCreate}
               onDeleted={this._onDeleted}
               onMounted={this._onMounted}
+              onEditVertex={this._oneditvertex}
+              onEditResize={this._oneditchange}
+              onEditStop={this.__editfinished}
 //              onCreated={this._onshapecomplete}   
 //              onClick={this._onMapClick}
             />
-            <Circle center={this.state.point} radius={this.state.radius} />
-          </FeatureGroup>
         </FeatureGroup>
       </div>
     )
   }
 
   render() {
-    const position = [30.51, 0.06]
+    const position = [this.state.lat, this.state.lng]; 
     return (
       <div style={styles.mapContainer}>
         <div className="draw-toolbar" style={styles.dropdown}>
@@ -283,7 +514,7 @@ export default class MyMap extends Component {
 //          className="map-section"
           ref={(ref) => { this.map = ref; }}
           center={position}
-          zoom={13}
+          zoom={this.state.zoom}
           style={styles.map}
         >
           {this.renderMap()}
