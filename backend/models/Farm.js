@@ -4,13 +4,15 @@ const Schema = mongoose.Schema;
 
 const geometrySchema = new Schema({
   coordinates : {type:Array,"default":[]},
+  type:{type:String},
 })
 
 const FeaturesSchema = new Schema({
   geometry : [geometrySchema],
   others : {type:Array,"default":{}},
   properties:{type:Array,"default":{}},
-  type : {type:String}
+  type : {type:String},
+  id : {type:String},
 })
 
 const FarmSchema = new Schema({
@@ -36,9 +38,13 @@ const FarmSchema = new Schema({
   geoJSON: {
     type: {type:String},
     features:[FeaturesSchema],
-  }
+  },
+  Id :{
+    type:String   
+  } 
 });
 
 const Farm = mongoose.model("farm", FarmSchema);
 
 module.exports = Farm;
+

@@ -8,6 +8,7 @@ const config = require("./db");
 const users = require("./routes/user");
 const customer = require("./routes/customer");
 const farm = require("./routes/farm");
+mongoose.set('useFindAndModify', false);
 
 // .connect(process.env.MONGODB_URL, {
 //   useNewUrlParser: true,
