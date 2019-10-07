@@ -140,8 +140,8 @@ export default class MyMap extends Component {
                   if (this.featuregroup.leafletElement._layers[ilayers]._mRadius > 0)
                      {
                       poly = turf.circle(center, radius / 1000, options);
+                      totalarea += turf.area(poly);   
                      }  
-                  totalarea += turf.area(poly);   
                 }   
              }   
          }  
@@ -217,8 +217,8 @@ export default class MyMap extends Component {
                   if (this.featuregroup.leafletElement._layers[ilayers]._mRadius > 0)
                      {
                       poly = turf.circle(center, radius / 1000, options);
+                      totalarea += turf.area(poly);   
                      }  
-                  totalarea += turf.area(poly);   
                  }   
              }   
          }  
@@ -322,8 +322,8 @@ export default class MyMap extends Component {
                 if (drawControl.layer._mRadius > 0)
                    {
                     poly = turf.circle(center, radius / 1000, options);
+                    totalarea += turf.area(poly);   
                    }  
-                totalarea += turf.area(poly);   
                }   
            }   
        }  
