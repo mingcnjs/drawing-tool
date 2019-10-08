@@ -52,4 +52,10 @@ router.post("/", function(req, res) {
   }
 });
 
+router.delete("/:id", function(req, res) { 
+  Farm.findByIdAndDelete(req.params.id)
+    .then(dbModel => res.status(200).json({ ok: true }))
+    .catch(err => res.status(422).json(err));
+});
+
 module.exports = router;

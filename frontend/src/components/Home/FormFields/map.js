@@ -48,17 +48,26 @@ export default class MyMap extends Component {
       dropdownOpen: false,
       firsttime:true, 
       loadedgeoJSON:true,
-      lat : 30.51,
-      lng : 0.06,
-      zoom:12
+//      lat : 30.51,
+//      lng : 0.06,
+//      zoom:12,
+      deletedropdownOpen:false,
+      selectedid : '' 
     }
   }
 
-  toggle() {
+  toggle = () => {
     this.setState(prevState => ({
       dropdownOpen: !prevState.dropdownOpen,
     }))
   }
+
+  toggledelete = () => {
+    this.setState(prevState => ({
+      deletedropdownOpen: !prevState.deletedropdownOpen,
+    }))
+  }
+
   renderMap() {
     return <TileLayer url={MAP_URL_DEFAULT} />
   }
@@ -329,28 +338,57 @@ export default class MyMap extends Component {
        }  
    this.props.getarea(Math.floor(totalarea * this.meterstoacres * 100)/100);
    this.props.geojsontostate(stringshapeGeoJSON);
-//   drawControl.layer.on({
+   drawControl.layer.on({
 //      mouseover: this.highlightFeature.bind(this),
 //      mouseout: this.resetHighlight.bind(this),
-//      click: this._onLayerClick.bind(this)
-//    });
+      click: this._onLayerClick.bind(this)
+    });
    this.layercount++; 
    this.editstarted = true;
    this.drawobject._container.querySelector("#editpolygon").click();
-//   setTimeout(() => {
-//      this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
-//      this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
-//   },500);
+   setTimeout(() => {
+      if (this.drawobject._container.querySelector('[title="Save changes"]'))
+         {     
+          this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+         }  
+      if (this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]'))
+         {     
+          this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+         }  
+   },500);
   }
 
  _onLayerClick(e){
-   if (this.editstarted)
-      {
-       this.editstarted = false;
-      }  
-   this.editstarted = true;
-   this.drawobject._container.querySelector("#editpolygon").click();
+    this.setState({selectedid:e.target.id});
  } 
+
+ deleteshape = () =>{
+  if (!this.state.selectedid)
+     {
+      return;
+     }
+  for (let idlayers in this.featuregroup.leafletElement._layers)
+      {
+       if (this.featuregroup.leafletElement._layers[idlayers].id === this.state.selectedid)
+          {
+           this.featuregroup.leafletElement.removeLayer(this.featuregroup.leafletElement._layers[idlayers]);
+          }     
+      }  
+  let nshapeGeoJSON = {}; 
+  nshapeGeoJSON.type = "FeatureCollection";
+  nshapeGeoJSON.features = [];
+  for (let ifeatures = 0; ifeatures <  this.shapeGeoJSON.features.length; ifeatures++)
+      {
+       if (this.shapeGeoJSON.features[ifeatures].id === this.state.selectedid)
+          {
+           continue;
+          }
+       nshapeGeoJSON.features.push(this.shapeGeoJSON.features[ifeatures]);          
+      } 
+  this.shapeGeoJSON.features =  nshapeGeoJSON.features;
+  this.props.geojsontostate(this.shapeGeoJSON);  
+  this.setState({selectedid:''});
+ }
  
   componentDidMount () {
   }
@@ -358,6 +396,15 @@ export default class MyMap extends Component {
   addpolygon = () =>{ 
     if (this.isLeafletdrawmounted)   
        { 
+        if (this.drawobject._container.querySelector('[title="Save changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+            this.drawobject._container.querySelector('[title="Save changes"]').click();          
+           }
+        if (this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+           }
         this.drawobject._container.querySelector("#drawpolygon").click();
        }  
   }
@@ -365,6 +412,15 @@ export default class MyMap extends Component {
   addrectangle = () =>{
     if (this.isLeafletdrawmounted)   
        {
+        if (this.drawobject._container.querySelector('[title="Save changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+            this.drawobject._container.querySelector('[title="Save changes"]').click();          
+           }
+        if (this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+           }
         this.drawobject._container.querySelector("#drawrectangle").click();
        }  
   }
@@ -373,6 +429,15 @@ export default class MyMap extends Component {
   addcircle = () =>{
     if (this.isLeafletdrawmounted)   
        {
+        if (this.drawobject._container.querySelector('[title="Save changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+            this.drawobject._container.querySelector('[title="Save changes"]').click();          
+           }
+        if (this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]'))
+           {   
+            this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+           }
         this.drawobject._container.querySelector("#drawcircle").click();
        }  
   }
@@ -396,8 +461,14 @@ export default class MyMap extends Component {
               }
            this.drawobject._container.querySelector("#editpolygon").click();
            setTimeout(() => {
-//              this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
-//              this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+              if (this.drawobject._container.querySelector('[title="Save changes"]'))
+                 {   
+                  this.drawobject._container.querySelector('[title="Save changes"]').setAttribute("id","savechanges");
+                 }
+              if (this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]'))
+                 {   
+                  this.drawobject._container.querySelector('[title="Cancel editing, discards all changes"]').setAttribute("id","cancelchanges");
+                 }
            },500);
       },1500);
   }
@@ -423,6 +494,7 @@ export default class MyMap extends Component {
                let leafletFG = this.featuregroup.leafletElement;
                let gpoints = null; 
                this.layercount = 1;
+               let poly =  null;
                for (let ifeat = 0; ifeat < this.shapeGeoJSON.features.length; ifeat++)
                    {
                     let idss = this.shapeGeoJSON.features[ifeat].id.split("#")[1]
@@ -433,7 +505,7 @@ export default class MyMap extends Component {
                             {
                              gpoints.push([this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsa][1],this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsa][0]])                        
                             }
-                        let poly = L.polygon(gpoints);
+                        poly = L.polygon(gpoints);
                         poly.id = this.shapeGeoJSON.features[ifeat].id;                         
                         leafletFG.addLayer(poly);
                         poly._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
@@ -445,7 +517,7 @@ export default class MyMap extends Component {
                             {
                              gpoints.push([this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsb][1],this.shapeGeoJSON.features[ifeat].geometry.coordinates[0][ipointsb][0]])                        
                             } 
-                        let poly = L.rectangle(gpoints);
+                        poly = L.rectangle(gpoints);
                         poly.id = this.shapeGeoJSON.features[ifeat].id;                         
                         leafletFG.addLayer(poly);
                         poly._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
@@ -458,9 +530,13 @@ export default class MyMap extends Component {
                         circle.id = this.shapeGeoJSON.features[ifeat].id;                         
                         leafletFG.addLayer(circle);
                         circle._path.setAttribute("id",this.shapeGeoJSON.features[ifeat].id);
+                        poly = circle;
                        } 
                     let ids = this.shapeGeoJSON.features[ifeat].id.split("#")
                     this.layercount = parseFloat(ids[0].split("_")[1]);
+                    poly.on({
+                       click: this._onLayerClick.bind(this)
+                    });
                    } 
                  if (this.layercount > 1)
                     {
@@ -474,6 +550,14 @@ export default class MyMap extends Component {
          },500);  
        }      
   }
+
+  deletefarm = () => {
+    if (this.state.selectedid)
+       {
+        this.props.deletefarm()
+       }  
+  }; 
+
 
   renderDraw() {
     return (
@@ -496,7 +580,7 @@ export default class MyMap extends Component {
   }
 
   render() {
-    const position = [this.state.lat, this.state.lng]; 
+    const position = [this.props.lat, this.props.lng]; 
     return (
       <div style={styles.mapContainer}>
         <div className="draw-toolbar" style={styles.dropdown}>
@@ -508,13 +592,20 @@ export default class MyMap extends Component {
               <DropdownItem onClick={this.addcircle}>Circle</DropdownItem>
             </DropdownMenu>
           </Dropdown>
+          <Dropdown isOpen={this.state.deletedropdownOpen} toggle={this.toggledelete}>
+            <DropdownToggle caret>Delete</DropdownToggle>
+            <DropdownMenu>
+              <DropdownItem onClick={this.deleteshape}>Delete Shape</DropdownItem>
+              <DropdownItem onClick={this.deletefarm}>Delete Farm</DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
           <Button onClick={this.action}>Undo</Button>
         </div>
         <Map
 //          className="map-section"
           ref={(ref) => { this.map = ref; }}
           center={position}
-          zoom={this.state.zoom}
+          zoom={this.props.zoom}
           style={styles.map}
         >
           {this.renderMap()}

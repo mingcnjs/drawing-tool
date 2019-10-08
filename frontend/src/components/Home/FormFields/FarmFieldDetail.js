@@ -1,15 +1,18 @@
 import React, { Component} from 'react'
 import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/styles'
-import TextField from '@material-ui/core/TextField'
 import Typography from '@material-ui/core/Typography'
 import { Button, FormGroup, Label, Input } from 'reactstrap'
 // import { Map, Marker, Popup, TileLayer } from 'react-leaflet'
 import Map from './map'
 import './styles.css'
 import 'leaflet/dist/leaflet.css'
-import { createFarm,updateFarm,getFarmList } from '../../../actions/farm'
+import { createFarm,updateFarm,getFarmList,deleteFarm } from '../../../actions/farm'
 import classnames from 'classnames'
+import Autocomplete from 'react-autocomplete'
+import request from 'request'
+import L from "leaflet";
+
 
 class FarmFieldDetail extends Component {
   listRef = null
@@ -18,10 +21,15 @@ class FarmFieldDetail extends Component {
     let id = this.props.location.pathname.split("/");
     let ids = id[id.length-2]     
     id = id[id.length-1];
+    this.USAbound = [-171.791110603, 18.91619, -66.96466, 71.3577635769]
+    this.USAbounds = L.latLngBounds()
+    this.USAbounds.extend([this.USAbound[0],this.USAbound[1]]);
+    this.USAbounds.extend([this.USAbound[2],this.USAbound[3]]);
+    console.log(this.USAbounds);
     this.state = {
-      lat: 51.505,
-      lng: -0.09,
-      zoom: 3,
+      lat: 30.51,
+      lng: -0.06,
+      zoom: 12,
       geoJSON:'',
       fieldName:'',
       clientName:'',
@@ -34,9 +42,12 @@ class FarmFieldDetail extends Component {
       tid : id,
       status:'NEW',
       bstat:'',
-      cid : ids 
+      cid : ids,
+      addresslist : [],
+      value:'',
+      addressresultcount : 500000,
+      addressUrl : "https://nominatim.openstreetmap.org/search?"
      }
-console.log(id);
    this.getMapdata = (getgeojson) => { 
        this.setState({geoJSON:getgeojson})
    }
@@ -56,11 +67,11 @@ console.log(id);
 
   componentWillReceiveProps(nextProps) {
     this.setState({status:"NEW"});  
-    let isolddata = false;
+//    this.isolddata = false;
     if (nextProps.farm.getFarms.data) {
         this.setState({farmId:nextProps.farm.getFarms.data._id});
         this.setState({status:"OLD"}); 
-        isolddata = true;
+//        this.isolddata = true;
        }
     if (nextProps.farm.getFarmsList && nextProps.farm.getFarmsList.length > 0)
        {
@@ -70,7 +81,7 @@ console.log(id);
                 {
                  this.setState({farmId:this.state.tid}); 
                  this.setState({status:"OLD"});
-                 isolddata = true;
+//                 this.isolddata = true;
                  this.setState({fieldName:nextProps.farm.getFarmsList[idata].fieldName}); 
                  this.setState({clientName:nextProps.farm.getFarmsList[idata].clientName}); 
                  this.setState({farmName:nextProps.farm.getFarmsList[idata].farmName}); 
@@ -112,6 +123,41 @@ console.log(id);
     }
   }
 
+  getAddress = (value) =>{
+    request(this.state.addressUrl+'format=json&limit='+this.state.addressresultcount+'&q=' + value, (error, response, body) => {  
+      let data = JSON.parse(body);
+      data.sort(function(a,b){
+         return parseFloat(a)-parseFloat(b)  
+      });  
+      let addressL = "";
+      this.setState({addresslist:[]});
+      let addl = [];
+      for (let idata = 0; idata < data.length; idata++)
+          {
+           if (addressL) 
+              { 
+               if (addressL.toUpperCase().indexOf(data[idata]["display_name"]+"||".toUpperCase() > -1))
+                  {
+                   continue;
+                  }  
+              }
+           let pss = [parseFloat(data[idata].lon),parseFloat(data[idata].lat)] 
+           if (!this.USAbounds.contains(pss))
+              {
+               continue;
+              }
+           let add = {};
+           add.name = data[idata]["display_name"];
+           addressL +=  data[idata]["display_name"]+"||";
+           add.pos = {};
+           add.pos.lat = parseFloat(data[idata].lat);
+           add.pos.lng = parseFloat(data[idata].lon);
+           add.key = idata;
+           addl.push(add);
+          }
+      this.setState({addresslist:addl});
+    });
+  }
 
   handleSubmit(e) { 
     e.preventDefault() 
@@ -146,7 +192,6 @@ console.log(id);
       approxArea : String(this.state.approxArea),
       geoJSON: this.state.geoJSON,
      }
-console.log(this.state.farmId);
     if (!this.state.farmId) 
        { 
         this.props.createFarm(farm)
@@ -183,6 +228,21 @@ console.log(this.state.farmId);
     this.handleSubmit(e)
   }
 
+  deleteFarm = () =>{
+    if (this.state.farmId)
+       { 
+        this.props.deleteFarm(this.state.farmId)
+        setTimeout(()=>{
+          this.props.history.go(-1)
+        },1500)  
+       } 
+  } 
+
+  rePosition = (pos) =>  { console.log(pos);
+     this.setState({lat:pos.lat});
+     this.setState({lng:pos.lng});
+  }
+
   render() {
     const { classes } = this.props
     const { errors } = this.state
@@ -191,7 +251,38 @@ console.log(this.state.farmId);
       <div className="detail-form-section">
         <div className="section">
           <div className="form-right-section">
-            <TextField className={classes.search} placeholder="Search Field" />
+            <div id = "addresslist" style={{marginLeft:'15px'}}>
+               <Autocomplete
+                  value={this.state.value}
+                  wrapperStyle={{width : '220px', position: 'absolute', display: 'inline-block'}}
+                  items={this.state.addresslist}
+                  inputProps={{ style:{width:'220px'} }}
+                  getItemValue={(item) => item.name}
+                  shouldItemRender={(item, value) => (item.name.toLowerCase().indexOf(value.toLowerCase())) > -1}
+                  onChange={(event, value) => {
+                    this.getAddress(value);
+                    this.setState({ value })
+                  } }
+                  onSelect={(item,value) => this.setState({"value":item,"reposition" : this.rePosition(value.pos)})}
+                  renderMenu={(items, value) => (
+                    <div className="menu">
+                      {value === '' ? (
+                        <div style={{ background:'#FAEBD7'}} className="item">Type of the name of a farm</div>
+                      ) : this.state.loading ? (
+                        <div style={{ background:'#FAEBD7'}} className="item">Loading...</div>
+                      ) : items.length === 0 ? (
+                       <div style={{ background:'#FAEBD7'}} className="item">No matches found</div>
+                      ) : items
+                     } 
+                   </div>
+                 )}
+                 renderItem={(item, isHighlighted) => (
+                    <div style={{ background: isHighlighted ? '#FAEBD7' : 'lightblue', border: '1px solid',textAlign:'left'}}  key={item.key}>
+                      <div style = {{width:'220px', flexDirection:'row', flex: 1, flexWrap: 'wrap',flexShrink: 1}} >{item.name}</div>
+                    </div>
+                 )}
+                />
+            </div>
             <Typography className={classes.title} component="h6">
               Add a Field
             </Typography>
@@ -271,7 +362,7 @@ console.log(this.state.farmId);
         </div>
 
         <div id="map" style={{ width: '100%', height: '100%' }}>
-          <Map geojsontostate={this.getMapdata} getarea={this.getAreadata} farmid = {this.state.farmId} status = {this.state.status} farmdata = {this.state.geoJSON}/>
+          <Map zoom = {this.state.zoom} lat = {this.state.lat} lng = {this.state.lng} deletefarm={this.deleteFarm} geojsontostate={this.getMapdata} getarea={this.getAreadata} farmid = {this.state.farmId} status = {this.state.status} farmdata = {this.state.geoJSON}/>
         </div>
       </div>
      </form>
@@ -294,6 +385,10 @@ const styles = {
     marginLeft: '15px',
     fontSize: '12px',
   },
+  menu : {
+    overflowY:'auto !important',
+    overflowX:'hidden !important',
+  },
 }
 const mapStateToProps = state => ({
   auth: state.auth,
@@ -304,7 +399,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = {
   createFarm,
   updateFarm,
-  getFarmList
+  getFarmList,
+  deleteFarm
 }
 export default connect(mapStateToProps,mapDispatchToProps)(withStyles(styles)(FarmFieldDetail))
  
