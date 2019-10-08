@@ -4,6 +4,7 @@ export const GET_CUSTOMER_LIST = 'GET_CUSTOMER_LIST'
 export const DELETE_CUSTOMER = 'DELETE_CUSTOMER'
 export const GET_FARM_DATA_BACK = 'GET_FARM_DATA_BACK'
 export const GET_FARM_LIST = 'GET_FARM_LIST'
+export const DELETE_FARM = 'DELETE_FARM'
 
 
 
