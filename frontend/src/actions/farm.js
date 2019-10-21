@@ -14,7 +14,6 @@ export const resetErrors = () => dispatch => {
 };
 
 export const getFarmList = uId => dispatch => {
-  console.log(uId);
   axios
     .get(`/api/farm/${uId}`)
     .then(response => {
@@ -42,7 +41,7 @@ export const updateFarm = (id, farm) => dispatch => {
 };
 
 export const createFarm = farm => dispatch => {
-  axios
+  return axios
     .post("/api/farm", farm)
     .then(res => {
       dispatch(getUpdateddata(res));
@@ -52,6 +51,7 @@ export const createFarm = farm => dispatch => {
         type: GET_ERRORS,
         payload: (err.response || { data: null }).data
       });
+      return Promise.reject();
     });
 };
 

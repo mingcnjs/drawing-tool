@@ -12,21 +12,7 @@ class Navbar extends Component {
     this.props.logoutUser(this.props.history);
   }
   render() {
-    const { isAuthenticated, user } = this.props.auth;
-    const authLinks = (
-      <ul className="navbar-nav ml-auto">
-        <a href="" className="nav-link" onClick={this.onLogout.bind(this)}>
-          <img
-            src={user.avatar}
-            alt={user.name}
-            title={user.name}
-            className="rounded-circle"
-            style={{ width: "25px", marginRight: "5px" }}
-          />
-          Logout
-        </a>
-      </ul>
-    );
+    const { isAuthenticated } = this.props.auth;
     return (
       <div>
         <div className="nav-section" style={{ padding: 15 }}>
@@ -40,7 +26,13 @@ class Navbar extends Component {
           id="navbarSupportedContent"
           style={{ padding: "10px 30px" }}
         >
-          {isAuthenticated ? authLinks : ""}
+          {isAuthenticated ? (
+            <a href="" onClick={this.onLogout.bind(this)}>
+              Logout
+            </a>
+          ) : (
+            ""
+          )}
         </div>
       </div>
     );

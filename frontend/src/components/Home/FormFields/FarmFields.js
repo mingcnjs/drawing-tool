@@ -1,10 +1,8 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { withStyles } from "@material-ui/styles";
-
 import Button from "@material-ui/core/Button";
 import { getFarmList } from "../../../actions/farm";
-import Autocomplete from "react-autocomplete";
 import "./styles.css";
 import _ from "lodash";
 
@@ -22,9 +20,7 @@ class FarmFields extends Component {
         disableAutoFocus: true
       },
       fieldList: [],
-      allFields: [],
-      selectedid: "",
-      selecteddata: []
+      allFields: []
     };
   }
 
@@ -110,7 +106,9 @@ class FarmFields extends Component {
                     style={{
                       fontSize: "15pt",
                       fontWeight: "bold",
-                      color: "#6d6d6d"
+                      color: "#6d6d6d",
+                      lineHeight: "20px",
+                      marginBottom: "5px"
                     }}
                   >
                     {field.fieldName}
