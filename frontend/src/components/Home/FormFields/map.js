@@ -24,7 +24,7 @@ const styles = {
     boxSizing: "border-box"
   },
   dropdown: {
-    zIndex: 100000000
+    zIndex: 1000
   }
 };
 
