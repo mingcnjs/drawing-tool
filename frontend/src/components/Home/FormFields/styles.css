@@ -6,9 +6,14 @@
   color: grey;
   font-weight: 100;
 }
+.a_field:hover {
+  border-color: #90b6ff !important;
+}
 .right-section {
   width: 400px;
-  text-align: center;
+  border: 1px dashed #e6e6e6;
+  height: 100%;
+  padding: 15px;
 }
 .left-section {
   height: 100%;
