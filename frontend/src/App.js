@@ -17,6 +17,8 @@ import FarmFieldDetail from "./components/Home/FormFields/FarmFieldDetail";
 
 import baseTheme from "./baseTheme";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.min.css";
 
 if (localStorage.jwtToken) {
   setAuthToken(localStorage.jwtToken);
@@ -73,6 +75,7 @@ class App extends Component {
                 </div>
               </div>
             </Fragment>
+            <ToastContainer autoClose={3000} hideProgressBar={true} />
           </MuiThemeProvider>
         </Router>
       </Provider>

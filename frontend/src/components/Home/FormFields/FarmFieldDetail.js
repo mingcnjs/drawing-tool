@@ -3,7 +3,6 @@ import { connect } from "react-redux";
 import { withStyles } from "@material-ui/styles";
 import Typography from "@material-ui/core/Typography";
 import { Button, FormGroup, Label, Input } from "reactstrap";
-// import { Map, Marker, Popup, TileLayer } from 'react-leaflet'
 import Map from "./map";
 import "./styles.css";
 import "leaflet/dist/leaflet.css";
@@ -17,16 +16,21 @@ import classnames from "classnames";
 import Autocomplete from "react-autocomplete";
 import request from "request";
 import L from "leaflet";
+import { toast } from "react-toastify";
 
 class FarmFieldDetail extends Component {
   listRef = null;
+  mapRef = React.createRef();
+
   constructor(props) {
     super(props);
+
     console.log(props);
     this.USAbound = [-171.791110603, 18.91619, -66.96466, 71.3577635769];
     this.USAbounds = L.latLngBounds();
     this.USAbounds.extend([this.USAbound[0], this.USAbound[1]]);
     this.USAbounds.extend([this.USAbound[2], this.USAbound[3]]);
+
     console.log(this.USAbounds);
     this.state = {
       lat: 30.51,
@@ -39,17 +43,16 @@ class FarmFieldDetail extends Component {
       approxArea: 0,
       userId: this.props.auth.user.id,
       errors: {},
-      farmdata: "",
-      status: this.props.match.params.fieldId === "add" ? "ADD" : "EDIT",
-      bstat: "",
-      addresslist: [],
+      addressList: [],
       value: "",
       addressresultcount: 500000,
       addressUrl: "https://nominatim.openstreetmap.org/search?"
     };
+
     this.getMapdata = getgeojson => {
       this.setState({ geoJSON: getgeojson });
     };
+
     this.getAreadata = getarea => {
       this.setState({ approxArea: getarea });
     };
@@ -64,14 +67,17 @@ class FarmFieldDetail extends Component {
     });
   }
 
+  isNew = () => {
+    return this.props.match.params.fieldId === "add";
+  };
+
   componentWillReceiveProps(nextProps) {
-    if (nextProps.farm.getFarmsList && nextProps.farm.getFarmsList.length > 0) {
-      const fieldId = this.props.match.params.fieldId;
-      if (fieldId === "add") {
-        this.setState({
-          status: "ADD"
-        });
-      } else {
+    const fieldId = this.props.match.params.fieldId;
+    if (fieldId !== "add") {
+      if (
+        nextProps.farm.getFarmsList &&
+        nextProps.farm.getFarmsList.length > 0
+      ) {
         const field = nextProps.farm.getFarmsList.find(f => f._id === fieldId);
         if (field) {
           const {
@@ -105,10 +111,10 @@ class FarmFieldDetail extends Component {
             geoJSON: shapeGeoJSON
           });
         } else {
-          this.setState({
-            status: "ADD"
-          });
+          this.props.history.goBack();
         }
+      } else {
+        this.props.history.goBack();
       }
     }
 
@@ -132,7 +138,7 @@ class FarmFieldDetail extends Component {
           return parseFloat(a) - parseFloat(b);
         });
         let addressL = "";
-        this.setState({ addresslist: [] });
+        this.setState({ addressList: [] });
         let addl = [];
         for (let idata = 0; idata < data.length; idata++) {
           if (addressL) {
@@ -157,13 +163,14 @@ class FarmFieldDetail extends Component {
           add.key = idata;
           addl.push(add);
         }
-        this.setState({ addresslist: addl });
+        this.setState({ addressList: addl });
       }
     );
   };
 
-  handleSubmit(e) {
-    e.preventDefault();
+  save = () => {
+    if (!this.state.geoJSON || this.state.geoJSON.features.length === 0)
+      return Promise.reject();
     let shapeGeoJSON = {};
     shapeGeoJSON.type = "FeatureCollection";
     shapeGeoJSON.features = [];
@@ -180,53 +187,59 @@ class FarmFieldDetail extends Component {
       }
       shapeGeoJSON.features.push(f);
     }
-    this.setState({ geoJSON: shapeGeoJSON });
-
     const farm = {
       userId: this.state.userId,
       fieldName: this.state.fieldName,
       clientName: this.state.clientName,
       farmName: this.state.farmName,
       approxArea: String(this.state.approxArea),
-      geoJSON: this.state.geoJSON
+      geoJSON: shapeGeoJSON
     };
-    if (!this.state.farmId) {
-      this.props.createFarm(farm);
+    if (this.isNew()) {
+      return this.props.createFarm(farm);
     } else {
-      this.props.updateFarm(this.state.farmId, farm);
+      return this.props.updateFarm(this.props.match.params.fieldId, farm);
     }
-    setTimeout(() => {
-      if (this.state.bstat === "Save" || this.state.bstat === "Cancel") {
-        this.props.history.go(-1);
-      }
-      //       this.props.history.push(`/farmfields/${this.state.cid}`)
-    }, 100);
-  }
+  };
 
   componentDidMount() {
     this.props.getFarmList(this.state.userId);
   }
 
-  setbstat1 = e => {
-    this.setState({ bstat: "Save" });
-    this.handleSubmit(e);
+  justSave = () => {
+    this.save().then(() => {
+      toast.success("Sucessfully");
+      this.props.history.goBack();
+    });
   };
 
-  setbstat2 = e => {
-    this.setState({ bstat: "Save&Continue" });
-    this.handleSubmit(e);
+  saveAndContinue = () => {
+    this.save().then(() => {
+      toast.success("Sucessfully");
+      if (this.isNew()) {
+        this.setState({
+          fieldName: "",
+          clientName: "",
+          farmName: "",
+          approxArea: 0
+        });
+        this.mapRef.current.reset();
+      } else {
+        this.props.history.push(`/farm/${this.props.auth.user.id}/fields/add`);
+      }
+    });
   };
 
-  setbstat3 = e => {
+  cancel = () => {
     this.props.history.goBack();
   };
 
   deleteFarm = () => {
-    if (this.state.farmId) {
-      this.props.deleteFarm(this.state.farmId);
-      setTimeout(() => {
-        this.props.history.go(-1);
-      }, 1500);
+    if (!this.isNew()) {
+      this.props.deleteFarm(this.props.match.params.fieldId).then(() => {
+        toast.success("Sucessfully");
+        this.props.history.goBack();
+      });
     }
   };
 
@@ -252,7 +265,7 @@ class FarmFieldDetail extends Component {
                     position: "absolute",
                     display: "inline-block"
                   }}
-                  items={this.state.addresslist}
+                  items={this.state.addressList}
                   inputProps={{ style: { width: "220px" } }}
                   getItemValue={item => item.name}
                   shouldItemRender={(item, value) =>
@@ -376,12 +389,15 @@ class FarmFieldDetail extends Component {
             <div className="btn-section">
               <Button
                 className="btn-primary-section"
-                onClick={this.setbstat1}
+                onClick={this.justSave}
                 style={{ marginTop: 0 }}
               >
                 Save
               </Button>
-              <Button className="btn-primary-section" onClick={this.setbstat2}>
+              <Button
+                className="btn-primary-section"
+                onClick={this.saveAndContinue}
+              >
                 Save & Add More
               </Button>
               <Button
@@ -391,7 +407,7 @@ class FarmFieldDetail extends Component {
                   color: "#2d7afa",
                   border: "1px solid #2d7afa"
                 }}
-                onClick={this.setbstat3}
+                onClick={this.cancel}
               >
                 Cancel
               </Button>
@@ -399,13 +415,14 @@ class FarmFieldDetail extends Component {
           </div>
           <div id="map" style={{ width: "100%", height: "100%" }}>
             <Map
+              ref={this.mapRef}
               zoom={this.state.zoom}
               lat={this.state.lat}
               lng={this.state.lng}
-              deletefarm={this.deleteFarm}
+              onDeleteFarm={this.deleteFarm}
               geojsontostate={this.getMapdata}
               getarea={this.getAreadata}
-              farmid={this.state.farmId}
+              isNew={this.isNew()}
               status={this.state.status}
               farmdata={this.state.geoJSON}
             />
