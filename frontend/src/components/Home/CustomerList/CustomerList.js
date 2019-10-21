@@ -1,51 +1,50 @@
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import { Button } from 'reactstrap'
-import FormModal from '../FormModal/FormModal'
-import ResultCustomer from './ResultCustomer'
-import './styles.css'
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { Button } from "reactstrap";
+import FormModal from "../FormModal/FormModal";
+import ResultCustomer from "./ResultCustomer";
+import "./styles.css";
 
 class CustomerList extends Component {
-  listRef = null
+  listRef = null;
 
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
-      modal: false,
-    }
-    this.toggle = this.toggle.bind(this)
-    this.onCreate = this.onCreate.bind(this)
-    this.onEdit = this.onEdit.bind(this)
+      modal: false
+    };
+    this.toggle = this.toggle.bind(this);
+    this.onCreate = this.onCreate.bind(this);
+    this.onEdit = this.onEdit.bind(this);
   }
 
   toggle() {
     this.setState(prevState => ({
-      modal: !prevState.modal,
-    }))
+      modal: !prevState.modal
+    }));
   }
 
   onCreate = () => {
     this.setState({
-      modal: false,
-    })
+      modal: false
+    });
     if (this.listRef) {
-      this.listRef.refresh()
+      this.listRef.refresh();
     }
-  }
+  };
 
   onEdit = currentSelectedItem => {
     if (this.modalRef) {
       this.setState({
-        modal: true,
-      })
-      this.modalRef.show(currentSelectedItem, true)
+        modal: true
+      });
+      this.modalRef.show(currentSelectedItem, true);
     }
-  }
+  };
 
   onView = currentSelectedItem => {
-    console.log('onView>>>>>>>>>>>>>>>>', currentSelectedItem)
-    this.props.history.push(`/farmfields/${currentSelectedItem._id}`)
-  }
+    this.props.history.push(`/farm/${currentSelectedItem._id}/fields`);
+  };
 
   render() {
     return (
@@ -57,7 +56,7 @@ class CustomerList extends Component {
           <ResultCustomer
             ref={connectedComponent => {
               if (connectedComponent) {
-                this.listRef = connectedComponent.getWrappedInstance()
+                this.listRef = connectedComponent.getWrappedInstance();
               }
             }}
             onEdit={this.onEdit}
@@ -70,8 +69,8 @@ class CustomerList extends Component {
               color="primary"
               size="lg"
               onClick={() => {
-                this.modalRef.show()
-                this.toggle()
+                this.modalRef.show();
+                this.toggle();
               }}
             >
               + Add New Customer
@@ -81,7 +80,7 @@ class CustomerList extends Component {
           <FormModal
             ref={connectedComponent => {
               if (connectedComponent) {
-                this.modalRef = connectedComponent.getWrappedInstance()
+                this.modalRef = connectedComponent.getWrappedInstance();
               }
             }}
             open={this.state.modal}
@@ -90,13 +89,13 @@ class CustomerList extends Component {
           />
         </div>
       </div>
-    )
+    );
   }
 }
 
 const mapStateToProps = state => ({
   auth: state.auth,
-  errors: state.errors,
-})
+  errors: state.errors
+});
 
-export default connect(mapStateToProps)(CustomerList)
+export default connect(mapStateToProps)(CustomerList);
