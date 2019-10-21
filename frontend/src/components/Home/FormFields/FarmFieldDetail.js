@@ -188,7 +188,7 @@ class FarmFieldDetail extends Component {
       shapeGeoJSON.features.push(f);
     }
     const farm = {
-      userId: this.state.userId,
+      userId: this.props.match.params.id,
       fieldName: this.state.fieldName,
       clientName: this.state.clientName,
       farmName: this.state.farmName,
@@ -203,7 +203,7 @@ class FarmFieldDetail extends Component {
   };
 
   componentDidMount() {
-    this.props.getFarmList(this.state.userId);
+    this.props.getFarmList(this.props.match.params.id);
   }
 
   justSave = () => {
