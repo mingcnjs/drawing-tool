@@ -1,86 +1,87 @@
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import { getCustomerList, deleteCustomer } from '../../../actions/customer'
-import Table from '@material-ui/core/Table'
-import TableBody from '@material-ui/core/TableBody'
-import TableCell from '@material-ui/core/TableCell'
-import TableHead from '@material-ui/core/TableHead'
-import TableRow from '@material-ui/core/TableRow'
-import Checkbox from '@material-ui/core/Checkbox'
-import { Button } from 'reactstrap'
-import './styles.css'
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { getCustomerList, deleteCustomer } from "../../../actions/customer";
+import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
+import TableCell from "@material-ui/core/TableCell";
+import TableHead from "@material-ui/core/TableHead";
+import TableRow from "@material-ui/core/TableRow";
+import Checkbox from "@material-ui/core/Checkbox";
+import { Button } from "reactstrap";
+import { toast } from "react-toastify";
+import "./styles.css";
 
 class ResultCustomer extends Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       customerDatas: [],
       checkStatus: false,
-      selected: [],
-    }
-    this.delete = this.delete.bind(this)
-    this.edit = this.edit.bind(this)
-    this.refresh = this.refresh.bind(this)
+      selected: []
+    };
+    this.delete = this.delete.bind(this);
+    this.edit = this.edit.bind(this);
+    this.refresh = this.refresh.bind(this);
   }
 
   componentDidMount() {
-    this.props.getCustomerList(this.props.auth.user.id)
+    this.props.getCustomerList(this.props.auth.user.id);
   }
 
   refresh = () => {
     this.setState({
-      selected: [],
-    })
-    this.props.getCustomerList(this.props.auth.user.id)
-  }
+      selected: []
+    });
+    this.props.getCustomerList(this.props.auth.user.id);
+  };
 
   handleClick(event, name) {
-    const { selected } = this.state
-    const selectedIndex = selected.indexOf(name)
-    let newSelected = []
+    const { selected } = this.state;
+    const selectedIndex = selected.indexOf(name);
+    let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name)
+      newSelected = newSelected.concat(selected, name);
     } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1))
+      newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1))
+      newSelected = newSelected.concat(selected.slice(0, -1));
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      )
+        selected.slice(selectedIndex + 1)
+      );
     }
     this.setState({
-      selected: newSelected,
-    })
+      selected: newSelected
+    });
   }
 
   delete() {
-    console.log('this.state.selected', this.state.selected)
+    console.log("this.state.selected", this.state.selected);
     if (this.state.selected.length > 0) {
       Promise.all(
         this.state.selected.map(customerId => {
-          return this.props.deleteCustomer(customerId)
-        }),
+          return this.props.deleteCustomer(customerId);
+        })
       ).then(() => {
-        this.refresh()
-      })
+        this.refresh();
+      });
     }
   }
 
   edit(item) {
-    this.props.onEdit(item)
+    this.props.onEdit(item);
   }
 
   view(item) {
-    this.props.onView(item)
+    this.props.onView(item);
   }
 
   render() {
-    const { customer } = this.props
-    const { selected } = this.state
-    const isSelected = name => selected.indexOf(name) !== -1
+    const { customer } = this.props;
+    const { selected } = this.state;
+    const isSelected = name => selected.indexOf(name) !== -1;
     return (
       <div>
         <Table>
@@ -97,8 +98,8 @@ class ResultCustomer extends Component {
           <TableBody>
             {customer &&
               Object.values(customer).map((row, i) => {
-                const isItemSelected = isSelected(row._id)
-                const labelId = `enhanced-table-checkbox-${i}`
+                const isItemSelected = isSelected(row._id);
+                const labelId = `enhanced-table-checkbox-${i}`;
                 return (
                   <TableRow
                     hover
@@ -112,7 +113,7 @@ class ResultCustomer extends Component {
                     <TableCell key={i}>
                       <Checkbox
                         checked={isItemSelected}
-                        inputProps={{ 'aria-labelledby': labelId }}
+                        inputProps={{ "aria-labelledby": labelId }}
                       />
                     </TableCell>
                     <TableCell
@@ -146,7 +147,7 @@ class ResultCustomer extends Component {
                       </Button>
                     </TableCell>
                   </TableRow>
-                )
+                );
               })}
           </TableBody>
         </Table>
@@ -160,29 +161,36 @@ class ResultCustomer extends Component {
           >
             Delete
           </Button>
-          <Button className="btn-send-customer" color="primary" size="sm">
+          <Button
+            className="btn-send-customer"
+            color="primary"
+            size="sm"
+            onClick={() => {
+              toast.success(`Success. Boundaries sent to Growers`);
+            }}
+          >
             Send Boundaries to Growers
           </Button>
         </div>
       </div>
-    )
+    );
   }
 }
 
 const mapStateToProps = state => ({
   auth: state.auth,
   errors: state.errors,
-  customer: state.customer.getCustomers,
-})
+  customer: state.customer.getCustomers
+});
 
 const mapDispatchToProps = {
   getCustomerList,
-  deleteCustomer,
-}
+  deleteCustomer
+};
 
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
   null,
-  { withRef: true },
-)(ResultCustomer)
+  { withRef: true }
+)(ResultCustomer);

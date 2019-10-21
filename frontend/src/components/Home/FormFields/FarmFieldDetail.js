@@ -208,14 +208,14 @@ class FarmFieldDetail extends Component {
 
   justSave = () => {
     this.save().then(() => {
-      toast.success("Sucessfully");
+      toast.success(`Success. ${this.state.fieldName} was updated`);
       this.props.history.goBack();
     });
   };
 
   saveAndContinue = () => {
     this.save().then(() => {
-      toast.success("Sucessfully");
+      toast.success(`Success. ${this.state.fieldName} was updated`);
       if (this.isNew()) {
         this.setState({
           fieldName: "",
@@ -237,7 +237,7 @@ class FarmFieldDetail extends Component {
   deleteFarm = () => {
     if (!this.isNew()) {
       this.props.deleteFarm(this.props.match.params.fieldId).then(() => {
-        toast.success("Sucessfully");
+        toast.success(`Success. ${this.state.fieldName} was deleted`);
         this.props.history.goBack();
       });
     }
