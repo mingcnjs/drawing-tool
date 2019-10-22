@@ -7,6 +7,8 @@ import "./styles.css";
 import _ from "lodash";
 import { Map, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import { MAP_URL_DEFAULT } from "../../../constants";
+import ReactPaginate from "react-paginate";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -15,6 +17,8 @@ L.Icon.Default.mergeOptions({
   iconUrl: require("leaflet/dist/images/marker-icon.png"),
   shadowUrl: require("leaflet/dist/images/marker-shadow.png")
 });
+
+const ITEM_PER_PAGE = 10;
 
 class FarmFields extends Component {
   listRef = null;
@@ -33,7 +37,10 @@ class FarmFields extends Component {
       center: {
         pos: [36.7815021, -119.71189604874],
         zoom: 4
-      }
+      },
+      pageCount: 1,
+      items: [],
+      pageIndex: 0
     };
   }
 
@@ -48,20 +55,26 @@ class FarmFields extends Component {
   componentWillReceiveProps(nextProps) {
     if (nextProps.farm.getFarmsList) {
       if (nextProps.farm.getFarmsList.length > 0) {
-        const sorted = _.orderBy(
+        let sorted = _.orderBy(
           nextProps.farm.getFarmsList,
           ["fieldName"],
           ["asc"]
         );
         this.setState({
           allFields: sorted,
-          fieldList: sorted
+          fieldList: sorted,
+          pageIndex: 0,
+          pageCount: Math.ceil(sorted.length / ITEM_PER_PAGE),
+          items: sorted.slice(0, ITEM_PER_PAGE - 1)
         });
       } else {
         if (this.state.allFields.length > 0) {
           this.setState({
             allFields: [],
-            fieldList: []
+            fieldList: [],
+            pageIndex: 0,
+            pageCount: 1,
+            items: []
           });
         }
       }
@@ -71,21 +84,39 @@ class FarmFields extends Component {
   searchFields = _.debounce(keyword => {
     if (keyword) {
       const lowerKeyword = keyword.toLowerCase();
+      const filterred = this.state.allFields.filter(field => {
+        return (
+          field.fieldName.toLowerCase().includes(lowerKeyword) ||
+          field.farmName.toLowerCase().includes(lowerKeyword) ||
+          field.clientName.toLowerCase().includes(lowerKeyword)
+        );
+      });
       this.setState({
-        fieldList: this.state.allFields.filter(field => {
-          return (
-            field.fieldName.toLowerCase().includes(lowerKeyword) ||
-            field.farmName.toLowerCase().includes(lowerKeyword) ||
-            field.clientName.toLowerCase().includes(lowerKeyword)
-          );
-        })
+        fieldList: filterred,
+        pageIndex: 0,
+        pageCount: Math.ceil(filterred.length / ITEM_PER_PAGE),
+        items: filterred.slice(0, ITEM_PER_PAGE - 1)
       });
     } else {
       this.setState({
-        fieldList: this.state.allFields
+        fieldList: this.state.allFields,
+        pageIndex: 0,
+        pageCount: Math.ceil(this.state.allFields.length / ITEM_PER_PAGE),
+        items: this.state.allFields.slice(0, ITEM_PER_PAGE - 1)
       });
     }
   }, 200);
+
+  handlePageClick = data => {
+    let pageIndex = data.selected;
+    this.setState({
+      pageIndex: pageIndex,
+      items: this.state.fieldList.slice(
+        pageIndex * ITEM_PER_PAGE,
+        (pageIndex + 1) * ITEM_PER_PAGE - 1
+      )
+    });
+  };
 
   render() {
     const { classes } = this.props;
@@ -94,7 +125,7 @@ class FarmFields extends Component {
         <div style={{ width: 400 }}>
           <input onChange={e => this.searchFields(e.target.value)}></input>
           <div>
-            {this.state.fieldList.map(field => {
+            {this.state.items.map(field => {
               return (
                 <div
                   onClick={() => {
@@ -159,14 +190,45 @@ class FarmFields extends Component {
               );
             })}
           </div>
-          <Button
-            style={{ marginTop: 10 }}
-            id="add"
-            className={classes.btnStyle}
-            onClick={this.handleClickAdd}
+          <div
+            style={{
+              display: this.state.items.length > 0 ? "block" : "none"
+            }}
           >
-            + Add a Field
-          </Button>
+            <ReactPaginate
+              previousLabel={"previous"}
+              nextLabel={"next"}
+              breakLabel={"..."}
+              breakClassName={"break-me"}
+              pageCount={this.state.pageCount}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              forcePage={this.state.pageIndex}
+              onPageChange={this.handlePageClick}
+              containerClassName={"pagination"}
+              subContainerClassName={"pages pagination"}
+              activeClassName={"active"}
+            />
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <Button
+              id="add"
+              className={classes.btnStyle}
+              onClick={() => {
+                this.props.history.goBack();
+              }}
+            >
+              Back
+            </Button>
+            <Button
+              style={{ float: "right" }}
+              id="add"
+              className={classes.btnStyle}
+              onClick={this.handleClickAdd}
+            >
+              + Add a Field
+            </Button>
+          </div>
         </div>
         <div
           style={{
@@ -183,11 +245,11 @@ class FarmFields extends Component {
               minHeight: 650
             }}
           >
-            {/* <TileLayer url={MAP_URL_DEFAULT} /> */}
-            <TileLayer
+            <TileLayer url={MAP_URL_DEFAULT} />
+            {/* <TileLayer
               attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            /> */}
             {this.state.fieldList.map(field => {
               const pos = [
                 ..._.get(
