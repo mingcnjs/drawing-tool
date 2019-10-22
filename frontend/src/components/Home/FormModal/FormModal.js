@@ -1,12 +1,12 @@
-import React from 'react'
-import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
+import React from "react";
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
 import {
   createCustomer,
   updateCustomer,
-  resetErrors,
-} from '../../../actions/customer'
-import classnames from 'classnames'
+  resetErrors
+} from "../../../actions/customer";
+import classnames from "classnames";
 import {
   Button,
   Modal,
@@ -15,109 +15,116 @@ import {
   ModalFooter,
   FormGroup,
   Label,
-  Input,
-} from 'reactstrap'
+  Input
+} from "reactstrap";
+import { toast } from "react-toastify";
+
 class FormModal extends React.Component {
   constructor() {
-    super()
+    super();
     this.state = {
-      operationName: '',
-      farmerEmail: '',
-      farmerName: '',
-      growerCustomerNumber: '',
+      operationName: "",
+      farmerEmail: "",
+      farmerName: "",
+      growerCustomerNumber: "",
       errors: {},
-      editable: false,
-    }
-    this.handleInputChange = this.handleInputChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-    this.show = this.show.bind(this)
+      editable: false
+    };
+    this.handleInputChange = this.handleInputChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.show = this.show.bind(this);
   }
 
   show(data, editable) {
-    this.props.resetErrors()
+    this.props.resetErrors();
     if (data) {
       const {
         _id,
         operationName,
         farmerEmail,
         farmerName,
-        growerCustomerNumber,
-      } = data
+        growerCustomerNumber
+      } = data;
       this.setState({
         operationName,
         farmerEmail,
         farmerName,
         growerCustomerNumber,
         editable,
-        currentEditingId: _id,
-      })
+        currentEditingId: _id
+      });
     } else {
       this.setState({
-        operationName: '',
-        farmerEmail: '',
-        farmerName: '',
-        growerCustomerNumber: '',
+        operationName: "",
+        farmerEmail: "",
+        farmerName: "",
+        growerCustomerNumber: "",
         editable: true,
-        currentEditingId: undefined,
-      })
+        currentEditingId: undefined
+      });
     }
   }
 
   handleInputChange(e) {
     this.setState({
-      [e.target.name]: e.target.value,
-    })
+      [e.target.name]: e.target.value
+    });
   }
 
   handleSubmit(e) {
-    e.preventDefault()
+    e.preventDefault();
     const user = {
       operationName: this.state.operationName,
       farmerEmail: this.state.farmerEmail,
       farmerName: this.state.farmerName,
-      growerCustomerNumber: this.state.growerCustomerNumber,
-    }
+      growerCustomerNumber: this.state.growerCustomerNumber
+    };
 
     Promise.resolve()
       .then(() => {
         if (this.state.currentEditingId) {
-          return this.props.updateCustomer(this.state.currentEditingId, user)
+          return this.props.updateCustomer(this.state.currentEditingId, user);
         } else {
           return this.props.createCustomer({
             ...user,
-            userId: this.props.auth.user.id,
-          })
+            userId: this.props.auth.user.id
+          });
         }
       })
       .then(() => {
-        this.props.onCreate()
-      })
+        this.props.onCreate();
+        if (this.state.currentEditingId) {
+          toast.success(`Success. ${this.state.operationName} was updated`);
+        } else {
+          toast.success(`Success. ${this.state.operationName} was created`);
+        }
+      });
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.errors) {
       this.setState({
-        errors: nextProps.errors,
-      })
+        errors: nextProps.errors
+      });
     }
   }
 
   render() {
-    const { open, onCancel } = this.props
-    const { errors } = this.state
+    const { open, onCancel } = this.props;
+    const { errors } = this.state;
     return (
       <Modal
         isOpen={open}
         toggle={onCancel}
         className="modal-style"
         style={{
-          border: 'none',
-          marginTop: '200px',
-          width: '498px',
+          border: "none",
+          marginTop: "200px",
+          width: "498px"
         }}
       >
         <ModalHeader>Create New Customer</ModalHeader>
-        <ModalBody style={{ border: 'none' }}>
+        <ModalBody style={{ border: "none" }}>
           <FormGroup>
             <Label for="operationName">Farming Operation Name</Label>
             <Input
@@ -125,8 +132,8 @@ class FormModal extends React.Component {
               name="operationName"
               id="operationName"
               placeholder="Farming Operation Name"
-              className={classnames('form-control form-control-lg', {
-                'is-invalid': errors.operationName,
+              className={classnames("form-control form-control-lg", {
+                "is-invalid": errors.operationName
               })}
               onChange={this.handleInputChange}
               value={this.state.operationName}
@@ -140,8 +147,8 @@ class FormModal extends React.Component {
               name="farmerName"
               id="farmerName"
               placeholder="Farmer Name"
-              className={classnames('form-control form-control-lg', {
-                'is-invalid': errors.farmerName,
+              className={classnames("form-control form-control-lg", {
+                "is-invalid": errors.farmerName
               })}
               onChange={this.handleInputChange}
               value={this.state.farmerName}
@@ -155,8 +162,8 @@ class FormModal extends React.Component {
               name="farmerEmail"
               id="farmerEmail"
               placeholder="Email Address"
-              className={classnames('form-control form-control-lg', {
-                'is-invalid': errors.farmerEmail,
+              className={classnames("form-control form-control-lg", {
+                "is-invalid": errors.farmerEmail
               })}
               onChange={this.handleInputChange}
               value={this.state.farmerEmail}
@@ -170,8 +177,8 @@ class FormModal extends React.Component {
               name="growerCustomerNumber"
               id="growerCustomerNumber"
               placeholder="Grower Customer Number"
-              className={classnames('form-control form-control-lg', {
-                'is-invalid': errors.growerCustomerNumber,
+              className={classnames("form-control form-control-lg", {
+                "is-invalid": errors.growerCustomerNumber
               })}
               onChange={this.handleInputChange}
               value={this.state.growerCustomerNumber}
@@ -183,10 +190,10 @@ class FormModal extends React.Component {
             )}
           </FormGroup>
         </ModalBody>
-        <ModalFooter style={{ border: 'none' }}>
+        <ModalFooter style={{ border: "none" }}>
           <Button color="primary" onClick={onCancel}>
             Cancel
-          </Button>{' '}
+          </Button>{" "}
           {this.state.editable && (
             <Button color="success" onClick={this.handleSubmit}>
               Submit
@@ -194,7 +201,7 @@ class FormModal extends React.Component {
           )}
         </ModalFooter>
       </Modal>
-    )
+    );
   }
 }
 
@@ -205,23 +212,23 @@ FormModal.propTypes = {
   errors: PropTypes.object.isRequired,
   open: PropTypes.bool.isRequired,
   onCreate: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-}
+  onCancel: PropTypes.func.isRequired
+};
 
 const mapDispatchToProps = {
   createCustomer,
   updateCustomer,
-  resetErrors,
-}
+  resetErrors
+};
 
 const mapStateToProps = state => ({
   auth: state.auth,
-  errors: state.errors,
-})
+  errors: state.errors
+});
 
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
   null,
-  { withRef: true },
-)(FormModal)
+  { withRef: true }
+)(FormModal);
