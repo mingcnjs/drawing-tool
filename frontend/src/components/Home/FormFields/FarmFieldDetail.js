@@ -182,7 +182,7 @@ class FarmFieldDetail extends Component {
       shapeGeoJSON.features.push(f);
     }
     const farm = {
-      userId: this.state.userId,
+      userId: this.props.match.params.id,
       fieldName: this.state.fieldName,
       clientName: this.state.clientName,
       farmName: this.state.farmName,
@@ -197,19 +197,19 @@ class FarmFieldDetail extends Component {
   };
 
   componentDidMount() {
-    this.props.getFarmList(this.state.userId);
+    this.props.getFarmList(this.props.match.params.id);
   }
 
   justSave = () => {
     this.save().then(() => {
-      toast.success("Sucessfully");
+      toast.success(`Success. ${this.state.fieldName} was updated`);
       this.props.history.goBack();
     });
   };
 
   saveAndContinue = () => {
     this.save().then(() => {
-      toast.success("Sucessfully");
+      toast.success(`Success. ${this.state.fieldName} was updated`);
       if (this.isNew()) {
         this.setState({
           fieldName: "",
@@ -231,7 +231,7 @@ class FarmFieldDetail extends Component {
   deleteFarm = () => {
     if (!this.isNew()) {
       this.props.deleteFarm(this.props.match.params.fieldId).then(() => {
-        toast.success("Sucessfully");
+        toast.success(`Success. ${this.state.fieldName} was deleted`);
         this.props.history.goBack();
       });
     }
