@@ -5,6 +5,16 @@ import Button from "@material-ui/core/Button";
 import { getFarmList } from "../../../actions/farm";
 import "./styles.css";
 import _ from "lodash";
+import { Map, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png")
+});
 
 class FarmFields extends Component {
   listRef = null;
@@ -20,7 +30,11 @@ class FarmFields extends Component {
         disableAutoFocus: true
       },
       fieldList: [],
-      allFields: []
+      allFields: [],
+      center: {
+        pos: [36.7815021, -119.71189604874],
+        zoom: 4
+      }
     };
   }
 
@@ -30,12 +44,6 @@ class FarmFields extends Component {
 
   handleClickAdd = () => {
     this.props.history.push(`/farm/${this.props.auth.user.id}/fields/add`);
-  };
-
-  handleClickModify = fieldId => {
-    this.props.history.push(
-      `/farm/${this.props.auth.user.id}/fields/${fieldId}`
-    );
   };
 
   componentWillReceiveProps(nextProps) {
@@ -83,15 +91,32 @@ class FarmFields extends Component {
   render() {
     const { classes } = this.props;
     return (
-      <div>
-        <div className="right-section">
+      <div style={{ display: "flex" }}>
+        <div style={{ width: 400 }}>
           <input onChange={e => this.searchFields(e.target.value)}></input>
           <div>
             {this.state.fieldList.map(field => {
               return (
                 <div
                   onClick={() => {
-                    this.handleClickModify(field._id);
+                    const pos = [
+                      ..._.get(
+                        field,
+                        "geoJSON.features[0].geometry[0].coordinates[0][0]",
+                        []
+                      )
+                    ];
+                    if (pos.length > 0) {
+                      pos.reverse();
+                      if (pos) {
+                        this.setState({
+                          center: {
+                            pos,
+                            zoom: 13
+                          }
+                        });
+                      }
+                    }
                   }}
                   key={`field_${field._id}`}
                   className="a_field"
@@ -99,7 +124,8 @@ class FarmFields extends Component {
                     border: "1px solid #cccccc",
                     borderRadius: "5px",
                     padding: "10px",
-                    marginTop: 10
+                    marginTop: 10,
+                    position: "relative"
                   }}
                 >
                   <div
@@ -124,6 +150,12 @@ class FarmFields extends Component {
                       <b>Client</b>: {field.clientName}
                     </div>
                   </div>
+                  <a
+                    href={`fields/${field._id}`}
+                    style={{ position: "absolute", right: 10, top: "37%" }}
+                  >
+                    edit
+                  </a>
                 </div>
               );
             })}
@@ -137,7 +169,55 @@ class FarmFields extends Component {
             + Add a Field
           </Button>
         </div>
-        <div className="left-section"></div>
+        <div
+          style={{
+            flex: 1,
+            marginLeft: 10
+          }}
+        >
+          <Map
+            center={this.state.center.pos}
+            zoom={this.state.center.zoom}
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: 650
+            }}
+          >
+            {/* <TileLayer url={MAP_URL_DEFAULT} /> */}
+            <TileLayer
+              attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {this.state.fieldList.map(field => {
+              const pos = [
+                ..._.get(
+                  field,
+                  "geoJSON.features[0].geometry[0].coordinates[0][0]",
+                  []
+                )
+              ];
+              if (pos.length === 0) {
+                return null;
+              }
+              pos.reverse();
+              return (
+                <Marker key={field._id} position={pos}>
+                  <Popup>
+                    <div style={{ width: 200 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700 }}>
+                        {field.fieldName}
+                        <i style={{ fontSize: 12 }}>({field.approxArea} ac)</i>
+                      </div>
+                      <div>Farm: {field.farmName}</div>
+                      <div>Client: {field.clientName}</div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </Map>
+        </div>
       </div>
     );
   }
