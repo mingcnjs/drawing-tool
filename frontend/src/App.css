@@ -23,6 +23,44 @@
 }
 
 @keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.Toastify > .Toastify__toast-container--top-right {
+  width: calc(100% - 2em) !important;
+}
+
+.Toastify > .Toastify__toast-container--top-right > .Toastify__toast--success {
+  background-color: rgba(191, 255, 216, 0.4);
+  border: 4px solid #7dfb9d;
+  border-radius: 5px;
+  color: #27803d;
+  font-weight: bold;
+  padding: 0;
+  position: relative;
+}
+
+.Toastify
+  > .Toastify__toast-container--top-right
+  > .Toastify__toast--success
+  > .Toastify__toast-body {
+  background-color: white;
+  z-index: -1;
+  line-height: 64px;
+  padding-left: 15px;
+}
+
+.Toastify
+  > .Toastify__toast-container--top-right
+  > .Toastify__toast--success
+  > .Toastify__close-button--success {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: #38ca1f;
 }
