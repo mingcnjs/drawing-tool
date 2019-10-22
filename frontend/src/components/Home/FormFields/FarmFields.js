@@ -23,7 +23,6 @@ class FarmFields extends Component {
     super(props);
     this.state = {
       modal: false,
-      userId: this.props.auth.user.id,
       value: "",
       menuProps: {
         desktop: true,
@@ -39,11 +38,11 @@ class FarmFields extends Component {
   }
 
   componentDidMount() {
-    this.props.getFarmList(this.state.userId);
+    this.props.getFarmList(this.props.match.params.id);
   }
 
   handleClickAdd = () => {
-    this.props.history.push(`/farm/${this.props.auth.user.id}/fields/add`);
+    this.props.history.push(`/farm/${this.props.match.params.id}/fields/add`);
   };
 
   componentWillReceiveProps(nextProps) {

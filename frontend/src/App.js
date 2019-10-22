@@ -19,6 +19,7 @@ import baseTheme from "./baseTheme";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
+import './App.css'
 
 if (localStorage.jwtToken) {
   setAuthToken(localStorage.jwtToken);
