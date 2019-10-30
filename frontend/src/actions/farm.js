@@ -14,13 +14,14 @@ export const resetErrors = () => dispatch => {
 };
 
 export const getFarmList = uId => dispatch => {
-  axios
+  return axios
     .get(`/api/farm/${uId}`)
     .then(response => {
       dispatch({
         type: GET_FARM_LIST,
         payload: response.data
       });
+      return response.data;
     })
     .catch(err => {
       dispatch({
