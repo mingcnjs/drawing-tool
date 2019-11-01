@@ -14,6 +14,7 @@ import JSZip from "jszip";
 import "./styles.css";
 var shpwrite = require("shp-write");
 var FileSaver = require("file-saver");
+import S3 from "aws-s3";
 
 const b64toBlob = (b64Data, contentType = "", sliceSize = 512) => {
   const byteCharacters = atob(b64Data);
@@ -127,6 +128,13 @@ class ResultCustomer extends Component {
           );
         });
         zip.generateAsync({ type: "blob" }).then(function(content) {
+          const s3Client = new S3({
+            bucketName: "manuel-growers",
+            dirName: "temps/",
+            region: "ap-southeast-1",
+            accessKeyId: "AKIAIZ6AOEOZT3DH3EIQ",
+            secretAccessKey: "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"
+          });
           FileSaver.saveAs(
             content,
             `${new Date().getMonth()}${new Date().getDate()}${new Date().getFullYear()}__${Date.now()}.zip`
