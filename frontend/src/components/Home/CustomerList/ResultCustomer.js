@@ -11,10 +11,25 @@ import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Checkbox from "@material-ui/core/Checkbox";
-import { Button } from "reactstrap";
 import { getFarmList } from "../../../actions/farm";
-import { toast } from "react-toastify";
 import "./styles.css";
+import {
+  Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  FormGroup,
+  Label,
+  Input
+} from "reactstrap";
+import { toast } from "react-toastify";
+import ReactTags from "react-tag-autocomplete";
+
+function validateEmail(email) {
+  var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 
 class ResultCustomer extends Component {
   constructor(props) {
@@ -22,7 +37,11 @@ class ResultCustomer extends Component {
     this.state = {
       customerDatas: [],
       checkStatus: false,
-      selected: []
+      selected: [],
+      receivers: [],
+
+      sendBoundariesModalVisible: false,
+      message: ""
     };
     this.delete = this.delete.bind(this);
     this.edit = this.edit.bind(this);
@@ -75,8 +94,15 @@ class ResultCustomer extends Component {
   }
 
   sendToGrowers = item => {
-    this.props.sendBoundaries(item._id).then(() => {
-      toast.success(`Success. Boundaries sent to Growers`);
+    this.setState({
+      sendBoundariesModalVisible: true,
+      sendBoundariesItem: item,
+      receivers: [
+        {
+          id: 1,
+          name: item.farmerEmail
+        }
+      ]
     });
   };
 
@@ -181,6 +207,98 @@ class ResultCustomer extends Component {
             Delete
           </Button>
         </div>
+        <Modal
+          isOpen={this.state.sendBoundariesModalVisible}
+          toggle={() => {
+            this.setState({
+              sendBoundariesModalVisible: false
+            });
+          }}
+          className="modal-style"
+          style={{
+            border: "none",
+            marginTop: "200px",
+            width: "498px"
+          }}
+        >
+          <ModalHeader>Send Boundaries to Growers</ModalHeader>
+          <ModalBody style={{ border: "none" }}>
+            <FormGroup>
+              <Label for="message">Message</Label>
+              <Input
+                type="text"
+                name="message"
+                id="message"
+                placeholder="Type something"
+                onChange={e => {
+                  this.setState({
+                    message: e.target.value
+                  });
+                }}
+                value={this.state.message}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="message">Receivers(email)</Label>
+              <ReactTags
+                id="message"
+                tags={this.state.receivers}
+                suggestions={[]}
+                allowNew={true}
+                handleDelete={index => {
+                  const receivers = [...this.state.receivers];
+                  receivers.splice(index, 1);
+                  this.setState({
+                    receivers
+                  });
+                }}
+                handleAddition={tag => {
+                  if (validateEmail(tag.name)) {
+                    this.setState({
+                      receivers: [...this.state.receivers, tag]
+                    });
+                  }
+                }}
+              />
+            </FormGroup>
+          </ModalBody>
+          <ModalFooter style={{ border: "none" }}>
+            {this.state.receivers.length > 0 && (
+              <Button
+                color="success"
+                style={{ marginRight: 10 }}
+                onClick={() => {
+                  if (this.state.sendBoundariesItem) {
+                    this.props
+                      .sendBoundaries(
+                        this.state.sendBoundariesItem._id,
+                        this.state.message,
+                        this.state.receivers.map(r => r.name)
+                      )
+                      .then(() => {
+                        toast.success(`Success. Boundaries sent to Growers`);
+                        this.setState({
+                          sendBoundariesModalVisible: false
+                        });
+                      });
+                  }
+                }}
+              >
+                Send
+              </Button>
+            )}
+            <Button
+              color="primary"
+              onClick={() => {
+                this.setState({
+                  sendBoundariesModalVisible: false
+                });
+              }}
+            >
+              Cancel
+            </Button>
+          </ModalFooter>
+        </Modal>
       </div>
     );
   }

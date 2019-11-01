@@ -8,9 +8,11 @@ export const resetErrors = () => dispatch => {
   });
 };
 
-export const sendBoundaries = customerId => dispatch => {
+export const sendBoundaries = (customerId, message, receivers) => dispatch => {
   return axios.post("/api/customer/sendBoundaries", {
-    customerId
+    customerId,
+    message,
+    receivers
   });
 };
 
