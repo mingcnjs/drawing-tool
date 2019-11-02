@@ -102,7 +102,8 @@ class ResultCustomer extends Component {
           id: 1,
           name: item.farmerEmail
         }
-      ]
+      ],
+      message: ""
     });
   };
 

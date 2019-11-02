@@ -112,28 +112,38 @@ router.post("/sendBoundaries", function(req, res) {
                 maxFileSize: 20 * 1024 * 1024
               };
 
+              console.log(receivers);
+
               nanoS3(options, err => {
                 if (err) {
                   res.status(500).json(`something went wrong`);
                 } else {
-                  const msg = {
-                    to: receivers,
-                    from: "growers@gmail.com",
-                    subject: "This is the shapefile of the boundaries",
-                    html: `Hi,<br/><br/>
-                    ${message ||
-                      "This link contains shapefile of the boundaries, please download and extract"}<br/><br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://growers01.s3-ap-southeast-1.amazonaws.com/temps/${
-                      customer.operationName
-                    }/${fileName}">click here to download shapefile</a><br/>
-                    <br/>
-                    Thanks,<br/>
-                    Growers Team
-                    `
-                  };
-                  sgMail.send(msg).then(() => {
-                    res.status(200).json("ok");
-                  });
+                  Promise.all(
+                    receivers.map(to => {
+                      const msg = {
+                        to,
+                        from: "growers@gmail.com",
+                        subject: "This is the shapefile of the boundaries",
+                        html: `Hi,<br/><br/>
+                      ${message ||
+                        "This link contains shapefile of the boundaries, please download and extract"}<br/><br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://growers01.s3-ap-southeast-1.amazonaws.com/temps/${
+                        customer.operationName
+                      }/${fileName}">click here to download shapefile</a><br/>
+                      <br/>
+                      Thanks,<br/>
+                      Growers Team
+                      `
+                      };
+                      return sgMail.send(msg);
+                    })
+                  )
+                    .then(() => {
+                      res.status(200).json("ok");
+                    })
+                    .catch(() => {
+                      res.status(500).json(`something went wrong`);
+                    });
                 }
               });
             })
