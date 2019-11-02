@@ -9,9 +9,7 @@ const JSZip = require("jszip");
 const shpwrite = require("shp-write");
 const nanoS3 = require("nano-s3");
 
-sgMail.setApiKey(
-  `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`
-);
+sgMail.setApiKey(process.env.SENDGRID_KEY);
 
 function validateEmail(email) {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -87,8 +85,8 @@ router.post("/sendBoundaries", function(req, res) {
               const options = {
                 // AWS Config
                 // Environment variables strongly recommended for keys
-                accessKeyId: "AKIAIZ6AOEOZT3DH3EIQ",
-                secretAccessKey: "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",
+                accessKeyId: process.env.S3_ACCESS_KEY,
+                secretAccessKey: process.env.S3_SECRET_KEY,
 
                 // protocol is optional, defaults to https
                 protocol: "https",
