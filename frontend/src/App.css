@@ -64,3 +64,41 @@
   right: 8px;
   color: #38ca1f;
 }
+
+ul.pagination {
+  margin-top: 10px;
+}
+
+ul.pagination li {
+  color: #cccccc !important;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+ul.pagination li a:hover {
+  text-decoration: none;
+}
+
+ul.pagination li a {
+  outline: none;
+  line-height: 35px;
+  height: 35px;
+  display: block;
+  padding: 0 10px;
+}
+
+ul.pagination li:hover {
+  border-color: #698eff;
+  color: #698eff;
+}
+
+ul.pagination li.active {
+  border-color: #698eff;
+  color: #698eff;
+  border-width: 2px;
+}
+
+ul.pagination li:not(:last-child) {
+  margin-right: 5px;
+}

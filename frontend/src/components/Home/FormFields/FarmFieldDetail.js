@@ -13,10 +13,16 @@ import {
   deleteFarm
 } from "../../../actions/farm";
 import classnames from "classnames";
-import Autocomplete from "react-autocomplete";
-import request from "request";
+import AutosuggestHighlightMatch from "autosuggest-highlight/umd/match";
+import AutosuggestHighlightParse from "autosuggest-highlight/umd/parse";
+import Autosuggest from "react-autosuggest";
 import L from "leaflet";
 import { toast } from "react-toastify";
+import axios from "axios";
+import _ from "lodash";
+
+const RESULT_COUNT = 10;
+const API_URL = `https://nominatim.openstreetmap.org/search?countrycodes=us&format=json&limit=${RESULT_COUNT}&q=`;
 
 class FarmFieldDetail extends Component {
   listRef = null;
@@ -25,17 +31,15 @@ class FarmFieldDetail extends Component {
   constructor(props) {
     super(props);
 
-    console.log(props);
     this.USAbound = [-171.791110603, 18.91619, -66.96466, 71.3577635769];
     this.USAbounds = L.latLngBounds();
     this.USAbounds.extend([this.USAbound[0], this.USAbound[1]]);
     this.USAbounds.extend([this.USAbound[2], this.USAbound[3]]);
 
-    console.log(this.USAbounds);
     this.state = {
-      lat: 30.51,
-      lng: -0.06,
-      zoom: 12,
+      lat: 36.7815021,
+      lng: -119.71189604874,
+      zoom: 14,
       geoJSON: "",
       fieldName: "",
       clientName: "",
@@ -43,10 +47,8 @@ class FarmFieldDetail extends Component {
       approxArea: 0,
       userId: this.props.auth.user.id,
       errors: {},
-      addressList: [],
-      value: "",
-      addressresultcount: 500000,
-      addressUrl: "https://nominatim.openstreetmap.org/search?"
+      suggestions: [],
+      keyword: ""
     };
 
     this.getMapdata = getgeojson => {
@@ -125,47 +127,39 @@ class FarmFieldDetail extends Component {
     }
   }
 
-  getAddress = value => {
-    request(
-      this.state.addressUrl +
-        "format=json&limit=" +
-        this.state.addressresultcount +
-        "&q=" +
-        value,
-      (error, response, body) => {
-        let data = JSON.parse(body);
-        data.sort(function(a, b) {
-          return parseFloat(a) - parseFloat(b);
-        });
-        let addressL = "";
-        this.setState({ addressList: [] });
-        let addl = [];
-        for (let idata = 0; idata < data.length; idata++) {
-          if (addressL) {
-            if (
-              addressL
-                .toUpperCase()
-                .indexOf(data[idata]["display_name"] + "||".toUpperCase() > -1)
-            ) {
-              continue;
-            }
-          }
-          let pss = [parseFloat(data[idata].lon), parseFloat(data[idata].lat)];
-          if (!this.USAbounds.contains(pss)) {
+  getAddress = keyword => {
+    return axios.get(`${this.state.addressUrl}${keyword}`).then(result => {
+      let data = JSON.parse(result.data);
+      data.sort(function(a, b) {
+        return parseFloat(a) - parseFloat(b);
+      });
+      let addressL = "";
+      this.setState({ addressList: [] });
+      let addl = [];
+      for (let idata = 0; idata < data.length; idata++) {
+        if (addressL) {
+          if (
+            addressL
+              .toUpperCase()
+              .indexOf(data[idata]["display_name"] + "||".toUpperCase() > -1)
+          ) {
             continue;
           }
-          let add = {};
-          add.name = data[idata]["display_name"];
-          addressL += data[idata]["display_name"] + "||";
-          add.pos = {};
-          add.pos.lat = parseFloat(data[idata].lat);
-          add.pos.lng = parseFloat(data[idata].lon);
-          add.key = idata;
-          addl.push(add);
         }
-        this.setState({ addressList: addl });
+        let pss = [parseFloat(data[idata].lon), parseFloat(data[idata].lat)];
+        if (!this.USAbounds.contains(pss)) {
+          continue;
+        }
+        let add = {};
+        add.name = data[idata]["display_name"];
+        addressL += data[idata]["display_name"] + "||";
+        add.pos = {};
+        add.pos.lat = parseFloat(data[idata].lat);
+        add.pos.lng = parseFloat(data[idata].lon);
+        add.key = idata;
+        addl.push(add);
       }
-    );
+    });
   };
 
   save = () => {
@@ -249,85 +243,74 @@ class FarmFieldDetail extends Component {
     this.setState({ lng: pos.lng });
   };
 
+  onKeywordChange = (event, { newValue, method }) => {
+    this.setState({
+      keyword: newValue
+    });
+  };
+
+  renderSuggestion = (suggestion, { query }) => {
+    const matches = AutosuggestHighlightMatch(suggestion.display_name, query);
+    const parts = AutosuggestHighlightParse(suggestion.display_name, matches);
+
+    return (
+      <span>
+        {parts.map((part, index) => {
+          const className = part.highlight
+            ? "react-autosuggest__suggestion-match"
+            : null;
+
+          return (
+            <span className={className} key={index}>
+              {part.text}
+            </span>
+          );
+        })}
+      </span>
+    );
+  };
+
+  onSuggestionsFetchRequested = _.debounce(({ value }) => {
+    axios.get(`${API_URL}${value}`).then(({ data }) => {
+      this.setState({
+        suggestions: data
+      });
+    });
+  }, 200);
+
+  onSuggestionsClearRequested = () => {
+    this.setState({
+      suggestions: []
+    });
+  };
+
   render() {
-    const { classes } = this.props;
-    const { errors } = this.state;
+    const { errors, keyword, suggestions } = this.state;
     return (
       <form onSubmit={this.handleSubmit}>
         <div className="detail-form-section">
           <div className="section">
-            <div className="form-right-section">
-              <div id="addresslist" style={{ marginLeft: "15px" }}>
-                <Autocomplete
-                  value={this.state.value}
-                  wrapperStyle={{
-                    width: "220px",
-                    position: "absolute",
-                    display: "inline-block"
-                  }}
-                  items={this.state.addressList}
-                  inputProps={{ style: { width: "220px" } }}
-                  getItemValue={item => item.name}
-                  shouldItemRender={(item, value) =>
-                    item.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  }
-                  onChange={(event, value) => {
-                    this.getAddress(value);
-                    this.setState({ value });
-                  }}
-                  onSelect={(item, value) =>
-                    this.setState({
-                      value: item,
-                      reposition: this.rePosition(value.pos)
-                    })
-                  }
-                  renderMenu={(items, value) => (
-                    <div className="menu">
-                      {value === "" ? (
-                        <div style={{ background: "#FAEBD7" }} className="item">
-                          Type of the name of a farm
-                        </div>
-                      ) : this.state.loading ? (
-                        <div style={{ background: "#FAEBD7" }} className="item">
-                          Loading...
-                        </div>
-                      ) : items.length === 0 ? (
-                        <div style={{ background: "#FAEBD7" }} className="item">
-                          No matches found
-                        </div>
-                      ) : (
-                        items
-                      )}
-                    </div>
-                  )}
-                  renderItem={(item, isHighlighted) => (
-                    <div
-                      style={{
-                        background: isHighlighted ? "#FAEBD7" : "lightblue",
-                        border: "1px solid",
-                        textAlign: "left"
-                      }}
-                      key={item.key}
-                    >
-                      <div
-                        style={{
-                          width: "220px",
-                          flexDirection: "row",
-                          flex: 1,
-                          flexWrap: "wrap",
-                          flexShrink: 1
-                        }}
-                      >
-                        {item.name}
-                      </div>
-                    </div>
-                  )}
-                />
-              </div>
+            <div className="form-right-section" style={{ margin: "0 10px" }}>
+              <Autosuggest
+                suggestions={suggestions}
+                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                getSuggestionValue={s => s.display_name}
+                renderSuggestion={this.renderSuggestion}
+                inputProps={{
+                  value: keyword,
+                  onChange: this.onKeywordChange
+                }}
+                onSuggestionSelected={(e, { suggestion }) => {
+                  this.setState({
+                    lat: parseFloat(suggestion.lat),
+                    lng: parseFloat(suggestion.lon)
+                  });
+                }}
+              />
               <Typography
-                className={classes.content}
                 component="p"
-                style={{ paddingTop: "35px", marginLeft: "10px" }}
+                style={{ marginTop: 5, fontSize: "10pt" }}
               >
                 You can use the Draw tool to create a shape, or you can upload a
                 shape by clicking import in the top navigation.
