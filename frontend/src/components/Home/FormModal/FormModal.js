@@ -191,14 +191,18 @@ class FormModal extends React.Component {
           </FormGroup>
         </ModalBody>
         <ModalFooter style={{ border: "none" }}>
-          <Button color="primary" onClick={onCancel}>
-            Cancel
-          </Button>{" "}
           {this.state.editable && (
-            <Button color="success" onClick={this.handleSubmit}>
+            <Button
+              style={{ marginRight: 10 }}
+              color="success"
+              onClick={this.handleSubmit}
+            >
               Submit
             </Button>
           )}
+          <Button color="primary" onClick={onCancel}>
+            Cancel
+          </Button>
         </ModalFooter>
       </Modal>
     );

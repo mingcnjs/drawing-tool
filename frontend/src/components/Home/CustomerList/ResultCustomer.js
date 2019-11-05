@@ -1,15 +1,35 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { getCustomerList, deleteCustomer } from "../../../actions/customer";
+import {
+  getCustomerList,
+  deleteCustomer,
+  sendBoundaries
+} from "../../../actions/customer";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Checkbox from "@material-ui/core/Checkbox";
-import { Button } from "reactstrap";
-import { toast } from "react-toastify";
+import { getFarmList } from "../../../actions/farm";
 import "./styles.css";
+import {
+  Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  FormGroup,
+  Label,
+  Input
+} from "reactstrap";
+import { toast } from "react-toastify";
+import ReactTags from "react-tag-autocomplete";
+
+function validateEmail(email) {
+  var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 
 class ResultCustomer extends Component {
   constructor(props) {
@@ -17,7 +37,11 @@ class ResultCustomer extends Component {
     this.state = {
       customerDatas: [],
       checkStatus: false,
-      selected: []
+      selected: [],
+      receivers: [],
+
+      sendBoundariesModalVisible: false,
+      message: ""
     };
     this.delete = this.delete.bind(this);
     this.edit = this.edit.bind(this);
@@ -35,7 +59,7 @@ class ResultCustomer extends Component {
     this.props.getCustomerList(this.props.auth.user.id);
   };
 
-  handleClick(event, name) {
+  handleClick(name) {
     const { selected } = this.state;
     const selectedIndex = selected.indexOf(name);
     let newSelected = [];
@@ -58,7 +82,6 @@ class ResultCustomer extends Component {
   }
 
   delete() {
-    console.log("this.state.selected", this.state.selected);
     if (this.state.selected.length > 0) {
       Promise.all(
         this.state.selected.map(customerId => {
@@ -69,6 +92,20 @@ class ResultCustomer extends Component {
       });
     }
   }
+
+  sendToGrowers = item => {
+    this.setState({
+      sendBoundariesModalVisible: true,
+      sendBoundariesItem: item,
+      receivers: [
+        {
+          id: 1,
+          name: item.farmerEmail
+        }
+      ],
+      message: ""
+    });
+  };
 
   edit(item) {
     this.props.onEdit(item);
@@ -92,7 +129,7 @@ class ResultCustomer extends Component {
               <TableCell>Farmer Name</TableCell>
               <TableCell>Email Address</TableCell>
               <TableCell>Growsers ID</TableCell>
-              <TableCell>Operations</TableCell>
+              <TableCell style={{ width: 380 }}>Operations</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -103,7 +140,7 @@ class ResultCustomer extends Component {
                 return (
                   <TableRow
                     hover
-                    onClick={event => this.handleClick(event, row._id)}
+                    onClick={event => this.handleClick(row._id)}
                     role="checkbox"
                     aria-checked={isItemSelected}
                     tabIndex={-1}
@@ -145,6 +182,15 @@ class ResultCustomer extends Component {
                       >
                         View Options
                       </Button>
+                      <Button
+                        style={{ marginLeft: 10 }}
+                        className="btn-edit-customer"
+                        color="primary"
+                        size="sm"
+                        onClick={() => this.sendToGrowers(row)}
+                      >
+                        Send Boundaries to Growers
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -154,24 +200,106 @@ class ResultCustomer extends Component {
         <div className="btn-sub-group">
           <Button
             className="btn-delete-customer"
-            color="primary"
+            color="danger"
             size="sm"
             onClick={this.delete}
             disabled={this.state.selected.length === 0}
           >
             Delete
           </Button>
-          <Button
-            className="btn-send-customer"
-            color="primary"
-            size="sm"
-            onClick={() => {
-              toast.success(`Success. Boundaries sent to Growers`);
-            }}
-          >
-            Send Boundaries to Growers
-          </Button>
         </div>
+        <Modal
+          isOpen={this.state.sendBoundariesModalVisible}
+          toggle={() => {
+            this.setState({
+              sendBoundariesModalVisible: false
+            });
+          }}
+          className="modal-style"
+          style={{
+            border: "none",
+            marginTop: "200px",
+            width: "498px"
+          }}
+        >
+          <ModalHeader>Send Boundaries to Growers</ModalHeader>
+          <ModalBody style={{ border: "none" }}>
+            <FormGroup>
+              <Label for="message">Message</Label>
+              <Input
+                type="text"
+                name="message"
+                id="message"
+                placeholder="Type something"
+                onChange={e => {
+                  this.setState({
+                    message: e.target.value
+                  });
+                }}
+                value={this.state.message}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="message">Receivers(email)</Label>
+              <ReactTags
+                id="message"
+                tags={this.state.receivers}
+                suggestions={[]}
+                allowNew={true}
+                handleDelete={index => {
+                  const receivers = [...this.state.receivers];
+                  receivers.splice(index, 1);
+                  this.setState({
+                    receivers
+                  });
+                }}
+                handleAddition={tag => {
+                  if (validateEmail(tag.name)) {
+                    this.setState({
+                      receivers: [...this.state.receivers, tag]
+                    });
+                  }
+                }}
+              />
+            </FormGroup>
+          </ModalBody>
+          <ModalFooter style={{ border: "none" }}>
+            {this.state.receivers.length > 0 && (
+              <Button
+                color="success"
+                style={{ marginRight: 10 }}
+                onClick={() => {
+                  if (this.state.sendBoundariesItem) {
+                    this.props
+                      .sendBoundaries(
+                        this.state.sendBoundariesItem._id,
+                        this.state.message,
+                        this.state.receivers.map(r => r.name)
+                      )
+                      .then(() => {
+                        toast.success(`Success. Boundaries sent to Growers`);
+                        this.setState({
+                          sendBoundariesModalVisible: false
+                        });
+                      });
+                  }
+                }}
+              >
+                Send
+              </Button>
+            )}
+            <Button
+              color="primary"
+              onClick={() => {
+                this.setState({
+                  sendBoundariesModalVisible: false
+                });
+              }}
+            >
+              Cancel
+            </Button>
+          </ModalFooter>
+        </Modal>
       </div>
     );
   }
@@ -185,7 +313,9 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
   getCustomerList,
-  deleteCustomer
+  deleteCustomer,
+  getFarmList,
+  sendBoundaries
 };
 
 export default connect(
