@@ -63,7 +63,14 @@ router.post("/sendBoundaries", function(req, res) {
                   f[ikeys] = shape[ishape][ikeys];
                 }
               }
-              shapeGeoJSON.features.push(f);
+              shapeGeoJSON.features.push({
+                ...f,
+                properties: {
+                  Farm___Name: field.farmName,
+                  Field___Name: field.fieldName,
+                  Grower___Name: customer.operationName
+                }
+              });
             }
             const b64string = shpwrite.zip(shapeGeoJSON, {
               folder: "",
